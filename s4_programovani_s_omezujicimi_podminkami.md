@@ -1,0 +1,3 @@
+# S4. Programování s omezujícími podmínkami
+
+> Algoritmy a konzistence: hranová, po cestě, k-konzistence, obecná hranová konzistence, konzistence mezí, směrové varianty, šířka grafu podmínek. Stromové prohledávání, pohled dopředu, pohled zpět, neúplná stromová prohledávání. Modelování pomocí omezujících podmínek, globální podmínky, omezující podmínky pro rozvrhování, programování pomocí CPLEX Optimization Programming Language. (PA163)

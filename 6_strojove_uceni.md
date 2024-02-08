@@ -1,0 +1,3 @@
+# 6. Strojové učení
+
+> Důkladná znalost základních metod strojového učení (rozhodovací stromy včetně regresních, SVM, naivní Bayes, kNN). Semi-supervised learning a aktivní učení. Ansámblové učení. Základy analýzy anomálií. Pokročilé metody vyhodnocování experimentů (křížová validace, ROC křivky, AUC, M učících algoritmů na N datových sadách, bootstrapping). Teoretické základy strojového učení (relace generalizace ve výrokové a predikátové logice, prostor hypotéz a verzí, bias-variance trade off) (PV021, PV056)
