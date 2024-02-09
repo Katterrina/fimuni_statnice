@@ -6,6 +6,12 @@
 
 TODO
 
+## Bodové odhady
+
+- chceme odhadnout jeden číselný parametr distribuce, ze které pocházejí data
+    - př. střední hodnota, rozptyl
+- odhadujeme pomocí 
+
 ## t-test
 
 ## ANOVA (ANalysis Of VAriance)
@@ -17,6 +23,12 @@ TODO
 - $i$-tá skupina obsahuje $n_i$ měření $Y_{i1},...,Y_{in_i}$, náhodný vzorek z normální pravděpodobnostní distribuce
 - proč ne opakovaný t-test? 
     - multiple testing problem
+- předpoklady
+    - homogenita rozptylu - rozptyly ve skupinách (alespoň přibližně) stejné
+        testy: Levene’s test, Bartlett’s test
+    - normalita - data ve skupinách normálně rozdělená
+        - protože porovnáváme s kvantily F-rozdělení
+        - testy: Lilliefors test, Shapiro–Wilk test (graficky: QQ-plot)
 - pokud zamítneme $H_0$, zajímá nás, které dvojice skupin se liší
     - metody mnohonásobného porovnávání:
         - **Tukeyho metoda** - pokud máme podobné velikosti náhodných vzorků
@@ -32,3 +44,15 @@ TODO
         - $H_0: \alpha_1 = ... = \alpha_n = 0$, $H_1: \exists i: \alpha_i \neq 0$
         - $H_0: \mu_1 = ... = \mu_n$, $H_1: \exists i,j: \mu_i \neq \mu_j$
     - za podmínky $H_0$ můžeme pozorování $Y_{ij}$ modelovat pomocí nulového modelu $M_0: Y_{ij}=\mu+\epsilon_{ij}$, který je submodelem $M_A$ 
+- vícefaktorová ANOVA
+
+## Mnohonásobná lineární regrese
+
+## PCA
+
+![Alt text](image.png)
+
+- analýza hlavních komponentt - statistická metoda pro redukci dimzionality dat
+- rotace ortonormální báze vektorového prostoru náhodných proměnných
+    - hlavní komponenty (tedy nová báze) jsou nekorelované
+        - vysvětlují co nejvíc z variability dat (rozptylu)
