@@ -1,0 +1,3 @@
+# 8. Vizualizace
+
+> Základní metriky pro hodnocení kvality vizualizace (efektivita a expresivita), osm základních vizuálních proměnných. Základní vizualizační techniky pro 1D, 2D, 3D (explicitní a implicitní reprezentace povrchu). Techniky pro vizualizaci multidimenzionálních dat (paralelní souřadnice, RadViz, scatterplot matrices) a hierarchických struktur (treemaps, dimensional stacking). Základní třídy interakčních technik (fisheye, perspektivní stěny), specifika aplikace interakčních technik v prostoru samotných dat a v prostoru jejich atributů. (PV251)
