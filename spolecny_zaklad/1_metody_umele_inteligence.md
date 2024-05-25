@@ -1,5 +1,7 @@
 # 1. Metody umělé inteligence
 
+*poznámky vytvořeny na základě přednášek a materiálů Hany Rudové z roku 2022*
+
 > [Prohledávání stavového prostoru](#heuristické-algoritmy-pro-prohledávání-stavového-prostoru), [lokální prohledávání a metaheuristiky s jedním řešením](#single-solution-based-metaheuristics), [populační metaheuristiky](#population-based-metaheuristiky) ([evoluční algoritmy](#genetické-algoritmy), [inteligence hejna](#stádní-inteligence))]. [Plánování](#plánování), [reprezentace problému](#formalizace), [plánování se stavovým prostorem](#plánování-v-prostoru-stavů). Práce s neurčitostí, [Bayesovské sítě](#nejistota-bayesovské-sítě), [exaktní](#inference---enumerace) a [aproximační](#inference---aproximace) odvozování, [čas a neurčitost](#čas-a-nejistota), [teorie užitku](#utility-theory), [Markovský rozhodovací proces](#markov-decision-process-mdp), [iterace hodnot, iterace strategie](#value-iteration--policy-iteration). [Robotika](#robotika), [plánování pohybu robota (konfigurační prostor, kombinatorické a pravděpodobnostní přístupy)](#plánování-a-vykonávání-pohybu). (IV126)
 
 ## Úvod
