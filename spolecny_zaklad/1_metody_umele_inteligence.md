@@ -9,10 +9,10 @@
 - AI: konstrukce racionálních agentů
     - agent - senzory (vnímá prostředí), actuators (něco dělá)
     - racionální agent provádí takové akce, které maximalizují nějakou meriku hodnotící jeho výkon
-    - jednoduchý reflexivní agent - vjem -> reakce, neuchovává žádnou historii
-    - model-based reflxivní agent - vjem -> stav -> reakce, ve stavech se zachovává informace z historie
-    - agent s cílem - vjem -> stav -> plánování -> reakce, snaží se dostat k cíli
-    - agent s utility fcí - vjem -> stav -> plánování -> reakce, snaží se optimalizovat utility fci, nejisté znalosti a rozhodování obsahující nejistotu
+    - jednoduchý reflexivní agent - vjem $\rightarrow$ reakce, neuchovává žádnou historii
+    - model-based reflxivní agent - vjem $\rightarrow$ stav $\rightarrow$ reakce, ve stavech se zachovává informace z historie
+    - agent s cílem - vjem $\rightarrow$ stav $\rightarrow$ plánování $\rightarrow$ reakce, snaží se dostat k cíli
+    - agent s utility fcí - vjem $\rightarrow$ stav $\rightarrow$ plánování $\rightarrow$ reakce, snaží se optimalizovat utility fci, nejisté znalosti a rozhodování obsahující nejistotu
 
 ## Heuristické algoritmy pro prohledávání stavového prostoru
 
