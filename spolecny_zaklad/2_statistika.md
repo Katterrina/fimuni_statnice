@@ -1,6 +1,6 @@
 # 2. Statistika
 
-> Důkladná znalost základních statististických metod ([bodové odhady](#bodové-odhady), [intervaly spolehlivosti](#intervaly-spolehlivosti-confidence-intervals-ci), [testování statistických hypotéz](#statistické-testy)). [ANOVA](#anova-analysis-of-variance). Neparametrické testy hypotéz. Mnohonásobná lineární regrese, autokorelace, multikolinearita. [Analýza hlavních komponent (PCA).](#pca) (MA012)
+> Důkladná znalost základních statististických metod ([bodové odhady](#bodové-odhady), [intervaly spolehlivosti](#intervaly-spolehlivosti-confidence-intervals-ci), [testování statistických hypotéz](#statistické-testy)). [ANOVA](#anova-analysis-of-variance). [Neparametrické testy hypotéz.](#neparametrické-testy) [Mnohonásobná lineární regrese](#mnohonásobná-lineární-regrese), [autokorelace](#autokorelace), [multikolinearita](#multikolinearita). [Analýza hlavních komponent (PCA).](#pca) (MA012)
 
 ## Úvod
 
@@ -171,14 +171,16 @@ $$
 
 ## ANOVA (ANalysis Of VAriance)
 
-- testujeme střední hodnoty $n$ skupin ($n \geq 3$, jinak t-test) odhaduté pomocí průměrů $\to$ na hladině významnosti $\alpha$ testujeme hypotézy $H_0$ a $H_1$
+- testujeme střední hodnoty $a$ skupin ($a \geq 3$, jinak t-test) odhaduté pomocí průměrů $\to$ na hladině významnosti $\alpha$ testujeme hypotézy $H_0$ a $H_1$
     - $H_0$: všechny skupiny mají stejnou střední hodnotu
-    - $H_1$: **alespoň dvě z $n$ skupin mají rozdílné střední hodnoty** 
+    - $H_1$: **alespoň dvě z $a$ skupin mají rozdílné střední hodnoty** 
 - jednotlivé skupiny jsou stochasticky nezávislé
-- $i$-tá skupina obsahuje $n_i$ měření $Y^i_1,...,Y^i_{n_i}$, náhodný vzorek z normální pravděpodobnostní distribuce
+- $i$-tá skupina obsahuje $n_i$ měření $Y_{i1},...,Y_{in_i}$, náhodný vzorek z normální pravděpodobnostní distribuce
 - proč ne opakovaný t-test? 
     - multiple testing problem - když opakujeme test hodněkrát, tak nám náhodou nakonec jednou vyjde, protože to je taky jenom pravědpodobnost
+    - ANOVA garantuje $P(\text{type I error}) = \alpha$
 - předpoklady
+    - jednotlivá pozorování jsou nezávislá
     - homogenita rozptylu - rozptyly ve skupinách (alespoň přibližně) stejné
         - testy: Levene’s test, Bartlett’s test
     - normalita - data ve skupinách normálně rozdělená
@@ -189,25 +191,182 @@ $$
         - **Tukeyho metoda** - pokud máme podobné velikosti náhodných vzorků
         - **Scheffeho metoda** - hodně různorodé velokosti náhodných vzorků
 
-### Model jednofaktorové ANOVA
+### Jednofaktorové ANOVA
 
 - "jednofaktorová" - data na skupiny dělíme podle jednoho parametru
     - př. odrůda brambor (ale ne zárověň ještě pole, na kterém byly pěstovány)
-- pozorování $Y_{ij}$ dopovídají modelu $M_A$ pokud $$Y_{ij} = \mu + \alpha_i + \epsilon_{ij} = \mu_i + \epsilon_{ij}$$ kde $\mu$ je celkový průměr, $\alpha_i$ je efekt skupiny $i$, $\mu_i$ je průměr skupiny $i$ a $\epsilon_{ij}$ jsou náhodné chyby
-    - **TODO** střední hodnota vs průměr
-    - ekvivalentní zápis hypotéz:
-        - $H_0: \alpha_1 = ... = \alpha_n = 0$, $H_1: \exists i: \alpha_i \neq 0$
-        - $H_0: \mu_1 = ... = \mu_n$, $H_1: \exists i,j: \mu_i \neq \mu_j$
+- ekvivalentní zápis hypotéz:
+    - $H_0: \alpha_1 = ... = \alpha_a = 0$, $H_1: \exists i: \alpha_i \neq 0$
+    - $H_0: \mu_1 = ... = \mu_a$, $H_1: \exists i,j: \mu_i \neq \mu_j$
+- pozorování $Y_{ij}$ dopovídají modelu $M_A$ pokud $$Y_{ij} = \mu + \alpha_i + \epsilon_{ij} = \mu_i + \epsilon_{ij}$$ 
+    - $\mu$ celková střední hodnota, odhadujeme pomocí průměru všech měření $\hat{\mu}=\overline{Y}_{**}$
+    - $\alpha_i$ efekt skupiny $i$, odhadujeme pomocí $\hat{\alpha_i}=\overline{Y}_{i*}-\overline{Y}_{**}$
+    - $\mu_i = \mu + \alpha_i$ průměr skupiny $i$, odhadujeme pomocí $\hat{\mu_i}=\overline{Y}_{i*}$
+    - $\epsilon_{ij}$ náhodné chyby s normálním rozdělením
     - za podmínky $H_0$ můžeme pozorování $Y_{ij}$ modelovat pomocí nulového modelu $M_0: Y_{ij}=\mu+\epsilon_{ij}$, který je submodelem $M_A$ 
-- vícefaktorová ANOVA
+        - v $M_0$ platí $\hat{\mu_i}=\hat{\mu}=\overline{Y}_{**}$
+- součet čtverců vysvětluje variabilitu
+    - celkový součet čtverců (total sum of squares) $\approx$ variabilita pozorování kolem celkového průměru $$S_T=\sum_{i=1}^a\sum_{j=1}^{n_i} (Y_{ij}-\overline{Y}_{**})^2 \sim \Chi^2(df_T=n-1)$$
+    - regresní součet čtverců $\approx$  variabilita skupin kolem celkového průměru, tedy vysvětlení varability pomocí skupi $$S_A=\sum_{i=1}^a (\overline{Y}_{i*}-\overline{Y}_{**})^2 \sim \Chi^2(df_A=a-1)$$
+    - reziduální součet čtverců $\approx$ variabilita každé skupiny okolo jejího průměru $$S_E=\sum_{i=1}^a\sum_{j=1}^{n_i} (Y_{ij}-\overline{Y}_{i*})^2 \sim \Chi^2(df_E=n-a)$$
+    - platí $S_T=S_A+S_E$
+    - součty čtverců využijeme k porovnání $M_0$ a $M_A$, spočítáme testovou statistiku s Fisher-Snedecor probability distribution
+
+#### ANOVA pro porovnávání modelů
+
+- porovnávání vnořených lineárních modelů (porovnání model-submodel)
+- hypotézy
+    - $H_0$: $M_1$ může být zjednodušen na $M_2$ (modely jsou ekvivalentní a $M_2$ má méně parametrů)
+    - $H_A$: $M_2$ není validní
+
+
+### Vícefaktorová ANOVA
+
+- model pro dvoufaktorovou ANOVU: $$Y_{ijk}=\mu_{ij}+\epsilon_{ijk}$$ kde $\epsilon_{ijk}$ jsou stochasticky nezávislé náhodné proměnné z normální pravděpodobnostní distribuce s nulovou střední hodnotou
+- máme více modelů, pro dvoufaktorovou anovu uvažujeme vliv
+    - faktoru A, B a jejich interakce AB
+    - faktoru A, faktoru B
+    - faktoru A
+    - faktoru B
+    - nulový model, faktory nemají vliv
+- porovnáváme všechny možné modely pro různé kombinace vlivů (jen pro A a B zvlášť nejsou porovnatelné, protože to není submodel)
+- $S_T=S_{AB}+S_A+S_B+S_E$
+
+## Neparametrické testy
+
+### Parametrické metody
+
+- většina statistických testů jsou paramterické metody, tedy používají např. normální distribuci pro modelování náhodných dat
+- na základě pozorovaných dat spočítáme bodové odhady nějaký parametrů, konfidenční intervaly, provádíme statistické testy
+    - všechny výpočty jsou založené na tom, že pozorovaná data pochází z nějaké parametrické rodiny
+    - typické předpoklady: interval nebo ratio data type, normalita vzorku, homogeita rozptylu, ...
+- pravděpodobnostní model popisuje možné výsledky náhodného procesu
+    - model je zásadní pro určení (ne)jistoty bodového nebo intervalového odhadu nebo určení kritické oblasty a výpočet p-hodnoty
+
+### Neparametrické metody
+
+- použijeme v případě, že předpoklady parametrických metod (normalita dat, homogenita rozptylu, interval/ratio data) nejsou splněny
+- příklady
+    - neparametrické regresní modely
+    - neparametrické testy
+    - neparametrické odhady hustoty pravděpodobnosti
+- uspořádaný náhodný výběr je náhodný vektor $(X_{(1)},X_{(2)} \ldots X_{(n)})$ takový, že $X_{(1)}\leq X_{(2)}\leq  \ldots \leq X_{(n)}$, náhodná proměnná $X_{(i)}$ se nazývá $i$-tá pořádková statistika
+- pořadí (rank) $R_i$ náhodné proměnné $X_i$ odpovídá pořadí $X_i$ v uspořádaném náhodném vzorku
+    - využijeme pro pořadové testy
+
+### Znaménkový test
+
+- pořadový test
+- nechť $(X_1,\ldots,X2)$ je náhodný výběr ze spojité pravděpodobnostní distribude s mediánem $\tilde{x}$
+    - víme $\forall i: P(X_i<\tilde{x})=P(X_i>\tilde{x})=1/2$
+- **otázka: je medián roven $x_0\in \mathbb{R}$?**
+    - $H_0: \tilde{x}=x_0$
+    - $H_A: \tilde{x}\neq x_0$
+- test:$$T^+=|\{i:X_i>x_0\}|=\sum_i Z_i$$ kde $Z_i$ je indikátorová náhodná proměnná (nabývá hodnoty 1 pokud $X_i>x_0$)
+    - $H_0$ zamítáme, pokud $T^+\leq k_\alpha$ nebo $T^+\geq n-k_\alpha$ kde $k_\alpha$ je největší číslo z množiny $\{0,\ldots, n\}$ takové, že $$P(T^+\leq k_{\alpha})=\frac{1}{2^n}\sum_{i=0}^{k_\alpha}\binom{n}{i}\leq\alpha/2$$ a $$P(T^+\geq n-k_{\alpha})=\frac{1}{2^n}\sum_{i=n-k_{\alpha}}^{n}\binom{n}{i}\leq\alpha/2$$
+    - asymptotická varianta ($n\geq 20$): platí-li $H_0$, pak testová statistika $U=\frac{T^+-\mathbb{E}[T^+]}{\sqrt{var(T^+)}}$ má asymptoticky standardní normální rozdělení
+- **párový znaménkový test**: odečteme od sebe páry, pak nepárový
+
+### Jednovýběrový Wilcoxonů test (signed-rank Wilcoxon test)
+
+- předpokládáme ordinální data
+- nechť $(X_1,\ldots,X2)$ je náhodný výběr ze spojité pravděpodobnostní distribude se symetrickou hustotou pravděpodobnosti $f(x)$, medián $\tilde{x}$
+    - víme $\forall i: P(X_i<\tilde{x})=\int_{-\infty}^\tilde{x}f(x)dx=P(X_i>\tilde{x})=\int_{\tilde{x}}^{\infty}f(x)dx=1/2$
+- **otázka: je medián roven $x_0\in \mathbb{R}$?**
+    - $H_0: \tilde{x}=x_0$
+    - $H_A: \tilde{x}\neq x_0$
+- test:
+    1. nechť $Y_i=X_i-x_0$
+    2. seřadíme  $Y_i$: ${|Y_i|}_{(1)}\leq \ldots \leq {|Y_j|}_{(n)}$, nechť $R_i^+# je pořadí $Y_i$ v seřazené sekvenci
+    3. spočítáme sum of ranks pro kladná a záporná $Y_i$ $$T^+=\sum_{Y_i>0}R_i^+, T^-=\sum_{Y_i<>>0}R_i^+$$
+    4. zaímáme na základě $min(T^+,T^-)$ porovnané s kritickou hodnotou
+- asymptoticky stejně jako výše znaménkový test
+- silnější než znaménkový test
+
+#### Dvouvýběrový
+
+- testujeme rovnost distribučních funkcí
+- podobně, jako výše, seřadíme všechno dohromady a pak uděláme součty ranků
+
+### Kruskal-Wallis test
+
+- "neparametrická ANOVA"
+- použijeme, pokud jsou porušeny podmínky ANOVY, ale náhodné výběry jsou nezávislé
+- hypotézy
+    - $H_0: F_1(x)=F_2(x)=\ldots=F_n(x)$
+    - $H_A: \exists i,j: i\neq j, F_i(x)\neq F_j(x)$
+- test:
+    - spojíme pozorování do jednoho vektoru $(Y_{11},\ldots,Y_{an_a})$
+    - seřadíme $Y_{(1)}\leq Y_{(2)}\leq  \ldots \leq Y_{(n)}$, $n=\sum_{i=1}^a n_i$
+    - nechť $R_{ij}$ je pořadí $Y_{ij}$
+    - sečteme pořadí v kategorii, z nich získáme testovou statistiku a porovnáme s kritickou hodnotou
 
 ## Mnohonásobná lineární regrese
 
-## PCA
+- nechť máme náhodnou proměnnou $Y$ závislou na náhodných proměnných $X_1,\ldots,X_l$ takovou, že $$Y=\beta_0+\sum_{i=1}^l \beta_i X_i +\epsilon= X\cdot\beta+\epsilon$$ kde
+    - $Y$ vektor, v každém řádku jedno pozorování
+    - $X$ matice plánu, první sloupec 1, další sloupce náhodné proměnné $X_i$ (všechny v první mocnině); matice má plnou hodnost, tj. sloupce jsou lineárně nezávislé
+    - $\beta$ regresní koeficienty
+    - $\epsilon$ nesystematické nekorelované náhodné chyby s homogenním rozptylem
+- jak najít nejlepší lineární aproximaci $\hat{Y}$ (aproximaci s nejmenším rozptylem), když máme $n$ pozorování? 
+    - hledáme taková $\beta$, že minimalizují $$S(\beta)=\sum_{i=1}^n[Y_i-\sum_{j=0}^l \beta_j X_{ij}-\beta_0]^2=(Y-X\beta)'(Y-X\beta)$$
+    - odhad metodou nejmenších čtverců $\hat{\beta}_{OLS}=(X'X)^{-1}(X'Y)$
+    - predikované hodnoty $\hat{Y}=X\hat{\beta}_{OLS}$
+    - rezidua $ri=Y_i-\hat{Y}_i$, reziduální součet čtverců pak je $$S_E=S_{\hat{\beta}_{OLS}}=\sum_{i=1}^n r_i^2$$
 
-![Alt text](../obrazky/image.png)
+## Autokorelace
+
+- obvykle v modelech předpokládáme nekorelované chyby
+- autokorelace znamená, že chyby jsou korelované, tedy $\rho(\epsilon_i,\epsilon_j)\neq 0$
+- kovarianční matice náhodných chyb není diagonální s homogenními rozptyly
+    - formálně: $var(\epsilon)\neq \sigma^2 I_n$
+- pokud použijeme OLS (ordinary least squares), může vést k mylnému dojmu, že některé koeficienty jsou signifikantní $\to$ spočítat to jde, ale je to blbě
+- jak zjistit autokorelaci: Durbin-Wasonův test, testová statistika $D$
+- řešení: extended linear regression model $Y=X\beta+\epsilon,\mathbb{E}[\epsilon]=0, var(\epsilon)=\sigma^2V$, kde $var(\epsilon)$ je symetrická a pozitivně definitní matice
+    - zobecněná metoda nejmenších čtverců (Atkienův odhad) $$\hat{\beta}_{GLS}=(X'V^{-1}X)^{-1}X'V^{-1}Y$$
+    - $var(\hat{\beta}_{GLS})=\sigma^2(X'V^{-1}X)^{-1}$
+    - $V$ kovarianční matice je symetrická a pozitivně definitní
+- autoregrese - speciální vztah mezi následujícími náhodnými chybami
+
+## Multikolinearita
+
+- multikolinearita je vzájemná lineární závislost prediktorů (vysvětlujících proměnných) v regresním modelu, tj. některé sloupce matice plánu jsou lineárně závislé
+    - v praxi: determinant $X'X$ je blízký nule, matice je skoro singulární $\to$ neexistuje inverze $\to$ nelze počítat $\hat{\beta}_{OLS}= (X'X)^{-1}X'Y$ (signulární nelze, skorosingulární způsobuje numerickou nestabilitu)
+        - důsledky: obtížné vyjádření vlivu jednotlivých vysvětlujících proměnných, koeficienty vyjdou nevýznamné, protože vysoké hodnoty rozptylů způsobí široké intervaly spolehlivosti
+- důvod: nadbytečné vysvětlující proměnné, například kvůli nepstávnému výběru prediktorů
+    - může být způsobeno vztahem, který neznáme, například dvě vysvětlující proměnné závisí na třetí, kterou neuvažujeme
+    - například v časových řadách je podobný vývoj dvou veličin dostatečným důvodem pro vznik multikolinearity
+- řešení: vybereme "správné" prediktory
+    - zkoušíme různé modely a porovnáváme je na základě daného kritéria, př. AIC, BIC (ne reziduální součet čtverců nebo koeficient determinace, v obou bychom stále jenom přidávali parametry)
+    - metoda postupné regrese
+        - dopředná - začneme s prázným modelem, v každém cyklu testujeme modely s +1 prediktory
+        - zpětná - začneme s maximálním modelem, v každém cyklu odebereme nejméně významný prediktor
+        - obousranná - v každém kroku zkusíme přidat i odebrat prediktor, vybereme nejlepší variantu
+
+
+## PCA
 
 - analýza hlavních komponent - statistická metoda pro redukci dimenzionality dat
 - rotace ortonormální báze vektorového prostoru náhodných proměnných
     - hlavní komponenty (tedy nová báze) jsou nekorelované
-        - vysvětlují co nejvíc z variability dat (rozptylu)
+    - báze je optimální - 1. PC vysvětluje co nejvíc z variability dat (rozptylu), 2. PC vysvětluje co nejvíce variability nevysvětlené 1. PC $\ldots$ vysvětlený rozptyl postupně klesá
+
+![PCA](../obrazky/image.png)
+
+
+- nechť $X$ je matice $n$ pozorování $k$ centrovaných náhodných proměnných kde $n>k$, $i$-tý řádek reprezentuje bod v $\mathbb{R}^k$, $X_{i1}, \ldots, X_{ik}$ jsou jeho souřadnice
+$$X=
+\left(\begin{array}{ccc} 
+X_{11} & \ldots & X_{1k} \\
+\ldots & \ldots & \ldots \\
+X_{n1} & \ldots & X_{nk} \\
+\end{array}\right)
+$$
+
+### Aproximace $x^*$
+
+- chceme zkonstruovat projekci vektoru $x$ z prostoru $\mathbb{R}^k$ do podprostoru $\mathbb{R}^r$ $\to$ aproximaci $x^*$
+- zvolíme ortonormální bázi $U = (u_1,\ldots,u_k) \in \mathbb{R}^k$ vektorového prostoru $\mathbb{R}^k$
+    - $U$ je ortogonální matice, tedy $U'U=I_k$ a $U'=U^{-1}$
+    - každý bod ve vektorovém prostoru $\mathbb{R}^k$$ můžeme vyjádřit jako $x= a_1u_1+\ldots+a_ku_k=Ua$ kde $a_{1\ldots k}$ jsou souřadnice převádějící $x$ ze standardních souřadnic $a=U'x$
+
