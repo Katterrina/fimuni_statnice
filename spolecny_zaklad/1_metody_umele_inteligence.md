@@ -9,10 +9,10 @@
 - AI: konstrukce racionálních agentů
     - agent - senzory (vnímá prostředí), actuators (něco dělá)
     - racionální agent provádí takové akce, které maximalizují nějakou meriku hodnotící jeho výkon
-    - jednoduchý reflexivní agent - vjem $\rightarrow$ reakce, neuchovává žádnou historii
-    - model-based reflxivní agent - vjem $\rightarrow$ stav $\rightarrow$ reakce, ve stavech se zachovává informace z historie
-    - agent s cílem - vjem $\rightarrow$ stav $\rightarrow$ plánování $\rightarrow$ reakce, snaží se dostat k cíli
-    - agent s utility fcí - vjem $\rightarrow$ stav $\rightarrow$ plánování $\rightarrow$ reakce, snaží se optimalizovat utility fci, nejisté znalosti a rozhodování obsahující nejistotu
+    - jednoduchý reflexivní agent - vjem $\to$ reakce, neuchovává žádnou historii
+    - model-based reflxivní agent - vjem $\to$ stav $\to$ reakce, ve stavech se zachovává informace z historie
+    - agent s cílem - vjem $\to$ stav $\to$ plánování $\to$ reakce, snaží se dostat k cíli
+    - agent s utility fcí - vjem $\to$ stav $\to$ plánování $\to$ reakce, snaží se optimalizovat utility fci, nejisté znalosti a rozhodování obsahující nejistotu
 
 ## Heuristické algoritmy pro prohledávání stavového prostoru
 
@@ -73,7 +73,7 @@
 
 #### Sousedství
 
-- neighborhood je funkce $N: S \rightarrow 2^S$, která každému řešení $s \in S$ přiřadí množinu $N(s) \subset S$ 
+- neighborhood je funkce $N: S \to 2^S$, která každému řešení $s \in S$ přiřadí množinu $N(s) \subset S$ 
 - malá sousedství
     - příkaldy pro permutační problémy
         - k-distance: prohodí k pozic
@@ -473,7 +473,7 @@ output: [nejlepší nalezené řešení]
     - $S$ je rekurzivně spočetná množina stavů
     - $A$ je rekurzivně spočetná množina možných akcí, obsahuje prázdnou akci
     - $E$ je rekurzivně spočetná množina možných událostí, obsahuje prádnou událost
-    - $\gamma$ je tranzitivní funkce, $\gamma: S \times A \times E \rightarrow P(S)$
+    - $\gamma$ je tranzitivní funkce, $\gamma: S \times A \times E \to P(S)$
         - $P(S)$ značí potenční množinu S
         - akce a události občas aplikovány zvlášť, tedy $(A \cup E)$ místo $(A \times E)$
 - **cíl**
@@ -488,7 +488,7 @@ output: [nejlepší nalezené řešení]
 - systém je konečný
 - plně pozorovatelný, známe současný stav
 - deterministický
-    - $\gamma: ... \rightarrow S$ místo $\gamma: ... \rightarrow P(S)$
+    - $\gamma: ... \to S$ místo $\gamma: ... \to P(S)$
 - statický, tedy $E = \emptyset$
 - cílem je dosáhnout některého z množiny cílových stavů
 - plány jsou prováděny sekvenčně, sestávají z uspořádané sekvence akcí
@@ -499,7 +499,7 @@ output: [nejlepší nalezené řešení]
     - řešením plánovacího problému $P$ je sekvence akcí $<a_1,a_2,...,a_k>$ a příslušných stavů $<s_0,s_1,...,a_k>$ takových že $s_i = \gamma(s_{i-1},a_i)$ a $s_k$ splňuje $g$
     - plánování odpovídá hledání cesty v grafu definovaném stavy (vrcholy) a tranzitivní funkcí (hrany)
         - zní jednoduše, ale ten graf by byl vážně velký
-            - chceme reprezentovat stavy a akce bez jejich vyjmenování $\rightarrow$ [množinová reprezentace](#možinová-reprezentace), [klasická reprezentace](#klasická-reprezentace)
+            - chceme reprezentovat stavy a akce bez jejich vyjmenování $\to$ [množinová reprezentace](#možinová-reprezentace), [klasická reprezentace](#klasická-reprezentace)
         - jak řešit efektivně?
 
 #### Možinová reprezentace
