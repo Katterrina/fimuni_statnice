@@ -369,4 +369,35 @@ $$
 - zvolíme ortonormální bázi $U = (u_1,\ldots,u_k) \in \mathbb{R}^k$ vektorového prostoru $\mathbb{R}^k$
     - $U$ je ortogonální matice, tedy $U'U=I_k$ a $U'=U^{-1}$
     - každý bod ve vektorovém prostoru $\mathbb{R}^k$$ můžeme vyjádřit jako $x= a_1u_1+\ldots+a_ku_k=Ua$ kde $a_{1\ldots k}$ jsou souřadnice převádějící $x$ ze standardních souřadnic $a=U'x$
+- bázi volíme tak, aby $\forall x in \mathbb{R}^k: x\approx x^*$, tedy $x$ je co nejlépe popsané pomocí $x^*$ prvních $r<k$ bázových vektorů: $x^*= U^*a^*$, kde $U*$ je matice tvořená prvními $r$ sloupci $U$
+    - $a^*=(U^*)'x$
+    - $x^*=U^*(U^*)'$
+    - chyba $\epsilon = x-x^*=a_{r+1}u_{r+1}+\ldots+a_{k}u_{k}$
+
+### Hledání 1. PC
+
+- hledáme $u_1$ takové, že vysvětlíme co nejvíce rozptylu, tj. aproximujeme $x_i$ pomocí $x^*_i=a_{i1}u_1$ (projekce $i$-tého pozorování do směru bázového vektoru $u_1$)
+- maximalizujeme rozptyl projekcí, portože chceme zachytit co nejvíce variability ($\Sigma$ je kovarianční matice)
+$$
+\sigma_1^2=\frac{1}{n}\sum_{i=1}^n a_{i1}^2=\frac{1}{n}\sum_{i=1}^n (u_1'x_i)^2=\frac{1}{n}\sum_{i=1}^n u_1' x_i x_i' u_1 = u_1'\left(\frac{1}{n}\sum_{i=1}^n  x_i x_i'\right) u_1=u_1'\Sigma u_1
+$$
+- hledáme $u_1$ takové, že $u_1'u_1=1$ a rozptyl $\sigma_1^2$ je maximální možný, tedy formulujeme jako $u_1'\Sigma u_1 \to max$ za podmínky $u_1'u_1=1$
+    - řešíme metodou Lagrangeových multiplikátorů $$L(u_1)=u_1'\Sigma u_1-\lambda_1(u_1'u_1-1)$$
+    - hledáme $$\frac{\partial L(u_1)}{\partial u_1}=0$$
+    - dostaneme $\sum u_1 = \lambda_1 u_1$, kde $\lambda_1$ je vlastní číslo a $u_1$ je vlastní vektor kovarianční matice $\Sigma$
+- $\sigma_1^2=u_1'\Sigma u_1=u_1'\lambda_1 u_1=\lambda_1$
+    - rozptyl vysvětlený 1. PC je roven největšímu vlastnímu číslu kovarianční matice $\Sigma$
+
+### Celý algoritmus výpočtu
+
+1. centrujeme data v matici $X^{n\times l}$ kde $n$ je počet pozorování a $l$ dimenzinalita dat
+2. spočítáme kovarianční matici $\Sigma^{l\times l}=\frac{1}{n}\sum_{i=1}^n  x_i x_i'$
+3. najdeme vlastní čísla a příslušné vlastní vektory matice $\Sigma$, vlastní čísla seřadíme v nerostoucím pořadí $\lambda_1 \geq \lambda_2 \geq \ldots \lambda_l$, podle nich seřadíme i vlastní vektory $u_1,u_2,\ldots u_n$
+    - $\to U =(u_1,u_2,\ldots u_n)$ je bázová matice hlavních komponent
+4.vybereme $r,r<l$ a vytvoříme $U^* =(u_1,u_2,\ldots u_r)$
+    - způsoby, jak vybrat $r$ (předpokládáme celkový rozptyl $Tr(\Sigma)=\sum_{i=1}^l \lambda_i$):
+        - vysvětlíme $80\%$ rozptylu, tedy $\sum_{i=1}^r \lambda_i \geq 0.8 \cdot Tr(\Sigma)$
+        - bereme komponenty, které mají "nadprůměrný" rozptyl (Kaiserovo pravidlo), tj. $\lambda_1 \geq \lambda_2 \geq \ldots \lambda_r \geq Tr(\Sigma)/l$
+5. získáme nové souřadnice $A^*=XU^*$
+
 
