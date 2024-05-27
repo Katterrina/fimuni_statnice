@@ -1,5 +1,7 @@
 # 2. Statistika
 
+*poznámky vytvořeny na základě přednášek a prezentací Ondřeje Pokory z roku 2022*
+
 > Důkladná znalost základních statististických metod ([bodové odhady](#bodové-odhady), [intervaly spolehlivosti](#intervaly-spolehlivosti-confidence-intervals-ci), [testování statistických hypotéz](#statistické-testy)). [ANOVA](#anova-analysis-of-variance). [Neparametrické testy hypotéz.](#neparametrické-testy) [Mnohonásobná lineární regrese](#mnohonásobná-lineární-regrese), [autokorelace](#autokorelace), [multikolinearita](#multikolinearita). [Analýza hlavních komponent (PCA).](#pca) (MA012)
 
 ## Úvod
