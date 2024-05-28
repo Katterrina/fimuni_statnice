@@ -11,6 +11,10 @@
     - doručit informaci
     - pomoci interpretaci dat
     - získat pozornost
+    - tři hlavní funkce: 
+        - **information storage** – recording given data (e.g,. photos, images, paintings, blueprints)
+        - **analysis of information** – data processing and evaluation, interaction quality evaluation
+        - **conveying information** – sharing data between communicating parties, their mutual cooperation, highlighting important aspects of the data
 - výzkum
     - jak lidi vnímají (vizualizace)
     - vymyslet techniky, jak vizualizovat, aby se to lidem dobře vnímalo
@@ -462,12 +466,14 @@
 
 ## Interakce
 
+- článek, ze kterého vycházela přednáška: <https://davis.wpi.edu/~xmdv/docs/vissym04_interaction.pdf>
 - navigace = změna pohledu kamery (rotace, posuny přiblížení, ...)
 - selekce 
-    - granularita selekce - vvybere se po kliknutí jen vrchol, nebo i jeho sousedi?
-    - přidá se nová selekce ke staré, nebo se nahradí?
+    - různé parametry:
+        - granularita selekce - vvybere se po kliknutí jen vrchol, nebo i jeho sousedi?
+        - přidá se nová selekce ke staré, nebo se nahradí?
 - filtrace - redukujeme množství dat nebo dimenzí ke zobrazení
-    - na rozdíl od selekce a par skrytí se obvykle dělá nepřímo
+    - na rozdíl od selekce a pak skrytí se obvykle dělá nepřímo v datech
 - přeskládání dat - př. PCA, MDS
 - překódovací operace - změna typu grafu, barev, markerů, ...
 - agregace - linked selection, brushnig (pokud můžeme selekci průběžně měnit)
@@ -479,11 +485,10 @@
     - komponenty grafického výstupu (prostor atributů)
     - objekty, 3D plochy - opět zoom, otáčení, výběr objektu, perspective walls
     - změny struktury vizalizace - př. skrytí komponent
-- animace postupný přecho jednoho pohledu do jiného
-    - nejprve určíme krejní body, přímku po které se budeme pohybovat, pak parametrizujeme pohyb
+- animace - postupný přechod jednoho pohledu do jiného
+    - nejprve určíme krajní body, přímku po které se budeme pohybovat, pak parametrizujeme pohyb
     - chceme se pomalu rozjet, pak jet a pak zabrzdit do nuly, ne trhavé pohyby
         - křivky pozice, rychlosti a zrychlení
-            
 
 ![Fisheye](../obrazky/8_vizualizace/fisheye.png)
 
