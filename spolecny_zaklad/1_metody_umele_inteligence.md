@@ -216,7 +216,7 @@ output: s [lokální optimum]
     - často kombinované s jinými algoritmy
 - můžeme akceptovat nezlepšující řešení
     - vždy vybíráme nejlepšího souseda, i když neexistuje zlepšující
-        - abychom necyklili, zakážeme sousedy, které jsme předtím prošli -> tabu list
+        - abychom necyklili, zakážeme sousedy, které jsme předtím prošli $\to$ tabu list
 - tabu list
     - krátkodobá paměť
     - 5-9 předchozích pohybů (stavy na pamatování moc velké)
@@ -1034,7 +1034,7 @@ vrať akci s největší utilitou
     - utilita stavu je jeho reward plus expected discounted utility dalšího stavu za předpokladu, že agent vybere optimální akci
     - Bellman equation: $U(s)=R(s)+\gamma max_{a\in A(s)}\sum_{s'} P(s'|s,a)U(s')$
         - máme $n$ rovnic s $n$ proměnnými (proměnná ~ utilita) pro $n$ stavů
-        - max není lineární operátor -> rovnice nejsou lineární
+        - max není lineární operátor $\to$ rovnice nejsou lineární
         - základ value iteration algoritmu
             - začínáme s náhodnými $U(s)$, třeba 0
             - pro každý stav provedeme Bellman update $U_{i+1}(s)=R(s)+\gamma max_{a\in A(s)}\sum_{s'} P(s'|s,a)U_i(s')$

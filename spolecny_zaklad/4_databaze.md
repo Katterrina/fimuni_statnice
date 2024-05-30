@@ -1,14 +1,15 @@
 # 4. Databáze
 
-> Ukládání dat, adresování záznamů. Indexování a hašování více atributů, rastrové (bitmap) indexy, dynamické hašování. Vyhodnocování dotazu a algoritmy, statistiky a odhady nákladů. Optimalizace dotazů a schémat, pravidla pro transformaci dotazů, rozdělování dat. Ladění dotazů a schématu. Zpracování transakcí, výpadky a zotavení. Bezpečnost, přístupová oprávnění. (PA152)
+> [Ukládání dat](#data-storage), [adresování záznamů](#block-organization). [Indexování](#indexing) a [hašování](#hash-index) více atributů, rastrové (bitmap) indexy, dynamické hašování. Vyhodnocování dotazu a algoritmy, statistiky a odhady nákladů. Optimalizace dotazů a schémat, pravidla pro transformaci dotazů, rozdělování dat. Ladění dotazů a schématu. Zpracování transakcí, výpadky a zotavení. Bezpečnost, přístupová oprávnění. (PA152)
 
-# PA152 Databáze (Dohnal)
+## Úvod
 
-- Database
+- database
     - data that are processed, interesting for a business
     - collection of relations, integrity constraints, indexes, …
     - database schema vs. database instance
-- Database management system = DBMS
+        - schéma popisuje strukturu dat, instace je konkrétní databáze
+- database management system = DBMS
     - a collection of tools for storing and processing data
     - architecture: view level (view 1, view 2 ... view n) - logical level - physical level
     - main components of DBMS
@@ -21,121 +22,174 @@
         - transaction manager
             - atomicity, consistency, isolation, durability of transaction processing
 
+![](../obrazky/4_databaze/db_architecture.png)
+
 ## Data Storage
 
 ### Storage Hierarchy
-- **primary storage**
-    - cache
-        - CPU
-        - fastest, most expensive, volatile
-    - main (operation)
-        - RAM
-        - too small or expensive for a whole database, volatile
-- **secondary storage**
-    - magnetic disk (HDD)
-        - large capacity, non-volatile
-        - reads and writes of the same speed
-            - slow random, fast sequential
-        - acces time (čas od požadavku an čtení/zápis do té doby, než se začne provádět čtení/zápis)
-            - komponenty: seek time (pohyb hlav na správné místo) + rotational delay (otočení na správné místo)
-        - transfer rate (rychlost čtení/zápisu) nižší pro vnitřní stopy 
-        - optimalizace HW: cache, algorithms for arm moving minimization
-    - solid state drive (flash memory)
-        - fast reads, non-volatile
-        - slow writes (erase first, than write)
-        - limited write cycles
-        - quiet, low access time and delay
-        - more resistant to damage (no moving parts)
-        - 4x more expensive than HDD (per GB)
-        - NAND chips 
-            - SLC (single-level cells) - 1 bit, fastest, highest cost
-            - MLC (multi-level cells) - 2 bit
-            - TLC (triple-level cells) - 3 bit
-- **tertiary storage**
-    - tapes, optical discs
-        - for backups 
 
+![](../obrazky/4_databaze/hierarchy.png)
 
-### Techniques of Accessing Data
+### Primary storage
 
-- **minimize random accesses**
-- double buffering
+- cache
+    - CPU
+    - fastest, most expensive, volatile (nestálý)
+- main (operation)
+    - RAM
+    - too small or expensive for a whole database, volatile
+
+### Secondary storage
+
+- magnetic disk (HDD)
+    - large capacity, non-volatile
+    - reads and writes of the same speed
+        - slow random, fast sequential
+    - acces time (čas od požadavku an čtení/zápis do té doby, než se začne provádět čtení/zápis)
+        - komponenty: seek time (pohyb hlav na správné místo) + rotational delay (otočení na správné místo)
+    - transfer rate (rychlost čtení/zápisu) nižší pro vnitřní stopy 
+    - optimalizace HW: cache, algorithms for arm moving minimization
+- solid state drive (flash memory)
+    - fast reads, non-volatile
+    - slow writes (erase first, than write)
+    - limited write cycles
+    - quiet, low access time and delay
+    - more resistant to damage (no moving parts)
+    - 4x more expensive than HDD (per GB)
+    - NAND chips 
+        - SLC (single-level cells) - 1 bit, fastest, highest cost
+        - MLC (multi-level cells) - 2 bit
+        - TLC (triple-level cells) - 3 bit
+
+### Tertiary storage
+
+- tapes, optical discs
+    - for backups 
+
+### Data exchange overview
+
+![](../obrazky/4_databaze/data_exchange.png)
+
+### Přístup k datům
+
+- chceme **minimalizovat random accesses**
+- v algoritmech obvykle pro zjednodušení uvažujeme stejnou cenu pro čtení a psaní
+- pracujeme s bloky dat
+    - **block size**
+        - velá block size oproti malé:
+            - (+) amortize I/O costs
+            - (-) read in more useless data; takes longer to read
+        - s nižší cenou paměti jsou bloky větší
+
+#### Metody
+
+- double buffering (app)
     - single - načtu, zpracuji, načtu, zpracuji
-    - double - načtu, zpracovávám a zároveň načítám další
-- prefatching
+        - čas = počet bloků ke zpracování (čas na čtení bloku + čas na zpracování bloku)
+    - double - načtu, zpracovávám a zároveň načítám další do druhého bufferu
+        - čas = čas na čtení bloku + (počet bloků ke zpracování * čas na zpracování bloku)
+            - předpokládáme, že čtení je rychlejší než zpracování
+- prefatching (OS) 
     - beginning a fetch operation whose result is expected to be needed soon
-- defragmentation
+- defragmentation (OS) 
     - arrange blocks in the order of processing 
-- **block size**
-    - big 
-        - (+) amortize I/O costs
-        - (-) read in more useless data; takes longer to read
-- **storage organization**
-    - disk array
-        - větší kapacita, načítáme naráz z víc disků paralelně
-        - mirroring
-            - zapisujeme na oba
-            - čteme z jednoho, takže rychlejší
-            - spolehlivost - máme data dvakrát
-        - striping
-            - data rozdělená na více disků
-                - bit level (moc se nepoužívá)
-                - block level (n disků, i-tý blok na disku (i mod n))
-            - paralelizovatelnost dlouhých čtení 
+- plan access (HW)
+    - elevator algorithm
+    - čtecí hlava se pohybuje v jednom směru
+    - přeskládáme požadavky na disk tak, aby se to dobře četlo
 
-#### RAID
 
-- *Redundant Arrays of Independent Disks*
-- <https://en.wikipedia.org/wiki/Standard_RAID_levels>
-- storage organization technika
-- různé varianty, různé spolehlivosti a rychlosti, používají se i kombinace
+### Storage organization
 
-**RAID0**
-- block striping
-- high performance, non-increased data availability
+- disk array = víc fyzických disků tvoří jeden logický celek
+    - větší kapacita, načítáme naráz z víc disků paralelně
+    - mirroring
+        - zapisujeme na oba
+        - čteme z jednoho, takže rychlejší
+        - spolehlivost - máme data dvakrát
+        - musíme dávat pozor na dependent failures, kdy bychom ztratili data na obou
+    - striping
+        - data rozdělená na více disků
+            - bit level (moc se nepoužívá)
+            - block level (n disků, i-tý blok na disku (i mod n)) - block striping
+        - paralelizovatelnost dlouhých čtení, redukujeme čas na odpověď 
+- **RAID** *Redundant Arrays of Independent Disks*
+    - <https://en.wikipedia.org/wiki/Standard_RAID_levels>
+    - storage organization technika
+    - různé varianty, různé spolehlivosti a rychlosti, používají se i kombinace
+    - nenahrazuje zálohování!
+
+#### RAID0
+- block striping, non-redundant (no fault tolerance)
+- high performance - čteme různá data z různých míst, zrychlení
+    - k diskům přistupujeme paralelně, pokud jich máme spojených n, tak tvoří jeden velký n-krát rychlejší celek
 - no reduced capacity
-- use when data availability not important
-    - data can be easily and quickly restored from backup
+- non-increased data availability 
+    - když jeden disk selže, tak celý array selže
+    - use when data availability not important
+        - data can be easily and quickly restored from backup
 
-**RAID1**
-- mirroring (two ro more disks)
-- capacity 1/#disků
+![](../obrazky/4_databaze/RAID_0.png)
+
+#### RAID1
+- mirroring (two or more disks)
+- kapacita odpovídá nejmenšímu disku v array
 - rychlé čtení (paralelně), psaní stejné jako na jeden disk
+- dokud je alespoň jeden z disků ok, tak je array použitelný
 
-**RAID2**
-- bit-striping, Hamming error-correcting-code
+![](../obrazky/4_databaze/RAID_1.png)
+
+#### RAID2
+- bit-striping, Hamming error-correcting code
 - recovers from 1 disk failure
+    - ale chyba není detekována by the drive!
 
-**RAID3**
+![](../obrazky/4_databaze/RAID_2.png)
+
+#### RAID3
 - byte-striping, 1 parity disk
+    - paritu můžeme pro restore využít tak, že uděláme XOR ostatních disků
+- errors detected by the drive!
 - writing - calculate and store parity
+- parity disk (tady i níže) snižuje kapacitu pro celý array
 
-**RAID4**
+![](../obrazky/4_databaze/RAID_3.png)
+
+#### RAID4
 - block-striping, jinak stejné jako 3
 - rychlejší
+    - čteme blok vždy z jednoho disku, můžeme paralelizovat
 - parity disk is a bottleneck
     - když zapisujeme, musíme tam zapsat
     - zápis - přečteme starý blok a paritu, spolu s novým blokem určíme novou paritu, zapíšeme nový blok a novou paritu
 
-**RAID5**
+![](../obrazky/4_databaze/RAID_4.png)
+
+#### RAID5
 - block-striping, distributed parity
-    - parity block for i-th block is on disk $(\lfloor\frac{i}{n-1}\rfloor \mod n)$
+    - parity block for ¶i¶-th block is on disk $$(\lfloor\frac{i}{n-1}\rfloor \mod n)$$
 - rychlejší než 4, může zapisovat paralelně
 - nahrazuje 2-4, často se používá
 
-![RAID5](https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/RAID_5.svg/1280px-RAID_5.svg.png)
+![](../obrazky/4_databaze/RAID_5.png)
 
-**RAID6**
-- dual distributed parity
+#### RAID6
+- dual distributed parity nebo Hamming codes
+    - podobné RAID5, ale ukládáme víc informací, takže re umí zotavit ze selhání více disků
 - lower speed and performance compared to RAID 5
 - less used than RAID5, used for very high-capacity disks
 
-**RAID combinations**
+![](../obrazky/4_databaze/RAID_6.png)
+
+#### RAID combinations
 - an array assembled from physical disks, a resulting array built over these arrays
 - used to increase performance and reliability
 - **RAID0+1**
     - nejprve striping, pak mirroring
     - if two drives (one in each group) fails, the entire RAID 01 will fail
+
+![RAID1+0](../obrazky/4_databaze/RAID_01.png)
+
 - **RAID1+0**
     - nejprve mirroring, nad mirrored disky striping
     - more resistant to failures - failure of a disk in any RAID1 is OK
@@ -143,33 +197,72 @@
         - for applications with a large number of writes
         - more expensive (menší využití disků)
         
-![RAID1+0](https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/RAID_10_01.svg/1024px-RAID_10_01.svg.png)
+![RAID1+0](../obrazky/4_databaze/RAID_10.png)
 
-- **RAID over SSD**
-    - SSD – issue of wearing
-    - limited writes is handled by moving writes to other areas, i.e., wear-leveling
-    - worse data availability/reliability
-        - almost sure that SSDs fail at once
-    - diff-RAID
-        - distributes parity unevenly
-        - after replacing a failed SSD with a brand-new one, parity is moved primarily to the most worn-out drive
+#### RAID over SSD
+- SSD issue of wearing - když někam hodně zapisujeme, tak se dané místo opotřebuje
+- limiting writes is handled by moving writes to other areas, i.e., wear-leveling
+- worse data availability/reliability
+    - almost sure that SSDs fail at once
+- diff-RAID
+    - distributes parity unevenly
+    - after replacing a failed SSD with a brand-new one, parity is moved primarily to the most worn-out drive
 
 #### Error Correcting Codes
 - parity
 - Hamming - parita přes trojice ze čtyř bitů, místo 4 bitů ukládáme 7
 
-### [TODO] Failures
+![](../obrazky/4_databaze/Hamming(7,4).png)
 
+### Failures
+
+- typy failů
+    - intermittent (přerušovaný)
+        - error při čtení/zápisu, když zopakujeme operaci, tak ok
+    - medium defekt
+        - premanentí selhání sektoru
+        - moderní disky umí detekovat a opravit (alokují volnou kapacitu)    
+    - permanent failure 
+        - nahradíme disk
+- detekce: checksum
+- korekce: redundance, error correctning codes
+    - disk array, ukládání na víc míst na stejném disku, journal (logujeme modifikace)
 - **Mean Time To Failure (MTTF)**
     - jinak: Mean Time Between Failures (MTBF)
     - v hodinách
     - corresponds to failure likelihood
     - average operating time between failures
         - half of disks fails during the period
+    - klesá se stářím disků
+    - obvykle něco jako 1.000.000 hodin (~120 let)
+    - odvozená **Annualized Failure Rate (AFR)** - kolik procent disků failne za rok
+        - v praxi roste s rostoucí teplotou (bylo ve slidech)
+        - AFR = 1 / (2*MTTF)
+    - ještě existuje **Annual Replacement Rate (ARR)**
+        - ne všechny failures způsobené vadnými disky (vadné kabely a tak)
+        - ve 40% případů se nakonec na vyměněném disku nenajde žádná chyba
+            - AFR = 0.6*ARR
 
-:::warning
-Dodělat
-:::
+#### Failure recovery
+
+- **Mean Time To Repair (MTTR)**
+    - čas od failu do doby, než se vrátí k provozu
+    - čas na výměnu vadného disku a data recovery
+    - zajímá nás pravděpodobnost, že během toho dojde k dalšímu selhání
+        - P(failure during repair) = (2*MTTR)/ 1 year
+        - předpokládáme, že to bude velmi krátký čas
+- **Mean Time To Data Loss (MTTDL)**
+    - závisí na MTTF a MTTR
+    - pro jeden disk odpovídá MTTF
+
+#### „Write Hole“
+
+- data se nezapíšou na všechny disky
+- je možné, že to vůbec nepostřehneme, může se objevit při array reconstruction
+- řešení
+    - journaling with data written commit message
+    - synchronizace array
+    - speciální file system
 
 ### File Systems
 
@@ -177,6 +270,11 @@ Dodělat
     1. add an unused block to list of used space
     2. write data block
     3. write file metadata referencing that data block
+- moderní file systems používají journaling
+    - začátek transakce v journalu
+    - uložení 1. až 3. v journalu
+    - provedení kroků 1. až 3.
+    - konec transakce v journalu
 
 ## Representing Data Elements
 
@@ -200,11 +298,11 @@ Dodělat
     - date
         - number of days since “epoch” (e.g., Jan 1, 1970)
         - string YYYYMMDD (8 bytes) nebo YYYYDDD (7 bytes)
-        - packed 3-byte integer DD + MM*32 + YYYY*16*32
+        - packed 3-byte integer DD + MM * 32 + YYYY * 16 * 32
     - time 
-        - number of seconds (milliseconds, microseconds) since midnight
-        - fractions of second separately
-        - time zones – time converted and stored in UTC
+        - number of seconds (milliseconds, microseconds) since midnight or DD * 24 * 3600 + HH * 3600 + MM * 60 + SS
+        - as string HHMMSSFF or as above with fractional part separately
+        - time zones - time converted and stored in UTC
     - datetime 
         - year * 13 + month; day, hour, min, sec + fraction 
     - timestamps 
@@ -228,7 +326,8 @@ Dodělat
     - fixed - each record same size
     - variable - saving space, complex implementation, possible to store large data items
 
-**Record Schema**
+#### Record Schema
+
 - describes record structure
     - number of attributes
     - order of attributes
@@ -259,8 +358,9 @@ Dodělat
         - primitive types - stored as records
         - collections - create new relation
 
-**Storing Relations**
-- row-oriented - records stored together
+#### Storing Relations
+
+- row-oriented - records stored together - klasika, to jsme uvažovali do teď
     - efektivní update/vložení záznamu
     - efektivní přístup k celým záznamům
 - column-oriented - values of the same attribute stored together
@@ -268,19 +368,22 @@ Dodělat
     - efektivní přístup př. pro data mining
         - načteme jen relevantní atributy, ale všechny jejich hodnoty 
 
-**Block Organization**
+![](../obrazky/4_databaze/Row-vs-Column-oriented-Storage.png)
+
+#### Block Organization
+
 - máme záznamy pevné nebo proměnlivé délky a bloky pevné délky, jak budeme ukládat?
 - separating records
     - pevná délka - bez oddělovačů, uložíme počet a pointer na první
-    - proměnlivá délka - oddělovače, ukládáme v record header délku bloku
+    - proměnlivá délka - oddělovače, ukládáme v record header délku record
+        - délky records můžeme ukládat buď v block header nebo v record header
 - spanned vs. unspanned records
     - unspanned - ceý záznam je v jednom bloku, jednoduché, ale zbývá volné místo
         - co s velkými objekty? (binárka/text)
             - uložíme mimo tabulku
             - obvykle neindexováno, nemůžeme koukat na hodnoty
-    - spanned - záznamy mohou být rozdělené mezi více bloků, nutné, pokud jsou dlouhé
         - možnosti pro dlouhé hodnoty ve sloupcích
-            - The Oversized-Attribute Storage Technique (TOAST)
+            - [The Oversized-Attribute Storage Technique (TOAST)](https://www.crunchydata.com/blog/postgres-toast-the-greatest-thing-since-sliced-bread)
                 - *PostgreSQL uses a fixed page size (commonly 8 kB), and does not allow tuples to span multiple pages. Therefore, it is not possible to store very large field values directly. To overcome this limitation, large field values are compressed and/or broken up into multiple physical rows.*
                 - how
                     - TOAST table created (chunk_id, chunk_seq, value)
@@ -288,31 +391,34 @@ Dodělat
                     - original space in table is used to store length of the value, TOAST table id and chunk id
             - komprese
             - rozdělení do více záznamů v tabulce
+    - spanned - záznamy mohou být rozdělené mezi více bloků, nutné, pokud jsou dlouhé
         - rozdělení záznamů mezi bloky
             - bloky musí být uspořádané nebo musíme použít pointery 
             - rozdělíme záznam na fragmenty, bit flag "fragmented" v header
                 - pointer na další/předchozí fragment
+
+![](../obrazky/4_databaze/blocking.gif)
+
 - sequencing
     - řazení záznamů v souboru
-    - řazení podle nějaké key value -> sequential file
+    - řazení podle nějaké key value $\to$ sequential file
         - důvod: efektivní přístup, pokud chceme brát podle pořadí klíče
     - solution in DBMS: clustered index 
         - *A clustered index is an index which defines the physical order in which table records are stored in a database. Since there can be only one way in which records are physically stored in a database table, there can be only one clustered index per table. By default a clustered index is created on a primary key column.*
     - sequential file
-        - stored consecutively - physically contiguous
-        - linked - jednoduše zařadíme něco doprostřed
+        - stored consecutively - physically contiguous, prostě jsou ty věci za sebou fyzicky tak, jak mají být seřazené
+        - linked - pointery mezi záznamy, jednoduše zařadíme něco doprostřed
         - overflow area - records in sequence (reorganization needed after record modifications), pointer to an overflow area/block
 - interlacing more relations 
     - records of multiple tables in one block
         - records of more relations accessed simultaneously
-        - store together -> access faster
+        - store together $\to$ access faster
         - more complex implementation
     - jestli se to vyplatí záleží na frekvenci jednotlivých typů dotazů 
         - občas se vyplatí nemíchat záznamy v blocích, ale uložit bloky blízko u sebe fyzicky na disku
-- indirection
-    - pointery na záznamy
+- indirection (pointery na záznamy)
     - aplikace
-        - spanned records
+        - spanned records - rozsekané záznamy mezi bloky, viz výše
         - referencing blocks / record (e.g. in indices)
         - linked blocks (e.g. in indices)
         - objects referencing to other objects
@@ -323,24 +429,22 @@ Dodělat
             - not flexible (e.g. block or records reallocation)
         - DB address
             - sequence of bytes describing record location in external memory
-            - record / block identified by its ID
-            - ID = logical address
+            - record / block identified by its ID, map table mapuje ID na fyzickou adresu
+                - ID = logical address
             - disadvantages: increased costs (accessing map table, storing map table)
             - advantage: very flexible (deletion/insertion of records, optimization of block storage)
         - combination (phys. record address = phys. block address + position)
             - the position in a list of records within block, at this position, byte-offset to the record is stored
             - advantages: possible to move records within block (no change in phys. address), map table not necessary
-            - disadvantages: minor - moving record to another block (minor), major - not flexible in moving blocks (defragmentation)
+            - disadvantages
+                - moving record to another block (minor)
+                - not flexible in moving blocks (major, defragmentation)
         - combination (record address = file ID + block number + position) 
             - blocks organized by file system, numbered from zero within each file
-            - file id, block number -> file system map -> physical block id
+            - file id, block number $\to$ file system map $\to$ physical block id
             - widely used 
 
-:::warning
-Proč defragmentace?
-:::
-
-**Block Header**
+#### Block Header
 
 - in each block
     - file ID (or relation ID or DB ID)
@@ -351,7 +455,8 @@ Proč defragmentace?
     - pointer to other blocks (e.g. in indices)
     - modification timestamp/version number
 
-**Record Modifications**
+#### Record Modifications
+
 - insertion
     - unordered file
         - append to the end (last block or allocate new)
@@ -359,7 +464,7 @@ Proč defragmentace?
             - need to handle variable length of records
     - ordered (sequential) file
         - unfeasible without indirect addressing nor record positions (offsets) 
-        - find free space in a “neighboring” block -> reorganize
+        - find free space in a “neighboring” block $\to$ reorganize
             - move last record in the block to the next block, put a marker in the original place to point to the new location
         - use overflow block - pointer to an overflow block is in the block header 
 - deletion
@@ -380,12 +485,12 @@ Proč defragmentace?
         - enlarging 
             - within a block - move following records
             - create an overflow block
-        - shrunk
+        - shrinking
             - may free overflow blocks
 
 ### Memory Buffers and Pointers
 
-- DB pointer in memory are inefficient
+- DB pointer in memory is inefficient
 - pointer swizzling - change of DB pointer to memory pointer and back
     - when
         - automatically – immediately after reading
@@ -395,27 +500,37 @@ Proč defragmentace?
         - DB address updated to memory address, build a translation table
             - store a pair (disk addr., memory addr.) for each record
         - flag (swizzled/unswizzled) in the pointer 
+
+![](../obrazky/4_databaze/point-swizzling.png)
+
 - buffer management
     - DB features needed
         - keep some blocks in memory/cache
     - different strategies
         - LRU: update timestamp on access to block; significant maintenance, but effective
-            - approximation - "clock" algorithm
+            - approximation - "clock" algorithm: ručička ukazuje na poslední přečtený záznam, rotuje, aby našla blok k zapsání na disk a nahrazení, při čtení nebo přístupu je flag nastavena 1
+            ![](../obrazky/4_databaze/clock.gif)
         - FIFO: store time of loading, no update on access; improper for highly accessed blocks
         - pinned blocks: blocks allocated in buffers forever  
+
+![](../obrazky/4_databaze/Working-of-LRU-Cache.png)
 
 ## Indexing
 
 - reason: faster access to records
 - variants: indexes, B-tree, hashing
 
-**Terminology**
-- sequential file
-    - bez indexu
-- index-sequential file
-    - sekvenční, ale s indexem
-- index 
-    - tvar <klíč, pointer to record>
+### Terminology
+
+- sequential file = bez indexu
+
+![](../obrazky/4_databaze/seq_file.png)
+
+- index-sequential file = sekvenční, ale s indexem
+
+![](../obrazky/4_databaze/index_seq_file.gif)
+
+- index = tvar <klíč, pointer to record>
     - primary, secondary
     - dense, sparse
         - dense ukazuje na všechno, sparse jen na něco
@@ -433,19 +548,28 @@ Proč defragmentace?
             - use “implicit” pointers, i.e., can be computed
             - e.g. block number derived from the order of items in index
 
-**How to handle duplicate keys**
+#### How to handle duplicate keys
 
 - dense index
-    - duplicate values in primary index
-    - values in primary index are unique (count how many)
-        - files must be sequential
+    - co s duplicitami?
+        - duplicate values in primary index
+        - values in primary index are unique (count how many)
+            - ukazují na první výskyt hodnoty
+            - files must be sequential
+
+![](../obrazky/4_databaze/dense_index.png)
+
 - sparse index
     - pointers with the first value in the block
         - can eliminate duplicate values
     - pointers with new value in block    
         - třeba když v minulém bloku už bylo 10 a tenhle začíná 10, ale pak je tam někde 20, tak pointer na 20
 
-**Secondary Index**
+![](../obrazky/4_databaze/sparse_index.png)
+
+#### Secondary Index
+
+![](../obrazky/4_databaze/secondary_index.png)
 
 - jiné řazení než podle primárního klíče, nebo když nemáme žádné řazení
 - musíme mít pointery na záznamy, protože sekvenčnost už používá primární index
@@ -462,19 +586,21 @@ Proč defragmentace?
 
 - advantages
     - simple
-    - index is sequential too -> good for full scan
+    - index is sequential too $\to$ good for full scan
 -disadvantages
     - costly updates
     - lost of physical "sequentiality" due to overflow buckets
 
 ### B-trees
 
+![](../obrazky/4_databaze/b+tree.png)
+
 - typicky se myslí B+tree
     - v porovnání s B-tree má pomalejší lookup, ale B-tree má různé formáty pro listy a nelisty a komplikované mazání, tak ho nepreferujeme
 - typ indexu
     - ne nutně sekvenční
     - vyvážený - garantuje max I/Os
-- parametr n - tree arity
+- parametr n (tree arity)
     - formát uzlu p1|K1|p2|K2...pn-1|Kn-1|pn
     - leaf node
         - všechny listy na stejné hladině
@@ -482,7 +608,7 @@ Proč defragmentace?
         - pointer pn ukazuje na další list (zřetězení listů)
     - non-leaf
         - pi ukazuje na vrchol s klíči K, kde Ki-1 <= K < Ki
-- insert/delete viz Průvodce
+- insert/delete viz Průvodce labyrintem algoritmů
 - v praxi často není implementováno splývání vrcholů pro delete
     - bývá víc insertů než delete
     - je to složité a má to malý efekt
@@ -508,18 +634,18 @@ Proč defragmentace?
 
 ### Hash index
 
+![](../obrazky/4_databaze/hashing.png)
+
 - koncept - key-to-address transformation
     - máme klíč, nacpeme ho do fukce, dostaneme adresu
 - direct addressing
-    - klíč -> hash - adresa
-    - https://www.tutorialspoint.com/what-are-hashed-files-and-indexed-file-organization-dbms
-    - typicky adresa bloku
-        - dobré pro hashed file
-    - adresa záznamu (record)
-        - používá se zřídka
+    - klíč $\to$ hash $\to$ adresa
+    - <https://www.tutorialspoint.com/what-are-hashed-files-and-indexed-file-organization-dbms>
+    - typicky adresa bloku, dobré pro hashed file
+    - adresa záznamu (record) se používá zřídka
 - indirect adressing
     - secondary index, má to overhead
-    - klíč -> hash - adresa bucketu -> bucket obsahuje dvojice <key,pointers> ->pointer ukazuje na blok ve složce
+    - klíč $\to$ hash (adresa bucketu) $\to$ bucket obsahuje dvojice <key,pointers> $\to$ pointer ukazuje na blok ve složce
     - address space - collection of buckets
         - bucket - kapacita víc než 1 záznam
             - setřídit?
@@ -527,24 +653,23 @@ Proč defragmentace?
                 - ano, pokud update zřídka
                 - ne při častých updatech
 - hash funkce
-    - řekněme že klíč je n bytový array, máme B bucketů
-    - h(x0,x1,...,xn-1)
-        - součet mod B
-        - součet mod B kde sčítance jsou xi*31^(n-i)
+    - řekněme že klíč je $n$ bytový array, máme B bucketů (1 bucket $\approx$ 1 blok)
+    - $h(x_0,x_1,\ldots,x_{n-1})$
+        - například součet mod B nebo součet mod B kde sčítance jsou $x_i\cdot 31^{(n-i)}$
     - chceme aby fce byla:
         - uniformní - rovnoměrné zatížení všech bucketů
         - náhodná - malá korelace mezi vstupem a výstupem
     - kolize - když už na spočtené adrese nějaký záznam je 
         - pokud můžeme uložit více klíčů/záznamů, tak není problém
         - pokud přeteče, tak musíme řešit
-- statické hashování
+- **statické hashování**
     - closed addressing (=open hashing)
-        - vrácená adresa je fixní, při přetečení alokujeme overflow blok, ty můžeme řetězi
+        - vrácená adresa je fixní, při přetečení alokujeme overflow blok, ty můžeme řetězit
         - používá se pro secondary index
     - open addressing (=closed hashing)
         - máme kolizní funkci - př. lineární, kvadratická, double-hashing
         - used in in-mem hash tables
-    - overflows -> reorganization
+    - overflows $\to$ reorganization
         - třeba nová hash funkce
 - **dynamické hashování**
     - **extendibl**e <https://www.geeksforgeeks.org/extendible-hashing-dynamic-approach-to-dbms/>
@@ -552,11 +677,11 @@ Proč defragmentace?
             - přidáme indirekci (directory) - size is power of 2
             - když nemáme dost místa, použijeme více bitů a více bucketů
         - výhody: neplýtváme místem, umíme pracovat s rostoucím množstvím záznamů, lokální reorganizace
-        nevýhody: indirekce (nevadí, pokud directory s ukazateli je v paměti), velikost directory se zdvojnásobuje (nemusí se vejít do paměti, počet bucketů roste lineárně)
+        - nevýhody: indirekce (nevadí, pokud directory s ukazateli je v paměti), velikost directory se zdvojnásobuje (nemusí se vejít do paměti, počet bucketů roste lineárně)
     - **linear**
         - myšlenka: použijeme suffix, nemáme directory
             - když použijeme 80% bucketů, tak nějaký rozdělíme na 0xxx a 1xxx a rozdělíme obsah a overflow
-        - advantages: nemáme directory, jinak ty stejné jako 
+        - advantages: nemáme directory, jinak ty stejné jako extendible výše
         - disadvantages: overflow
 - hashing vs indexing
     - hashing good for exact match like SELECT ... WHERE a=5
@@ -564,12 +689,16 @@ Proč defragmentace?
 
 ### Bitmap (raster) index
 
+![](../obrazky/4_databaze/bitmap_index.png)
+
 - pro málo možných hodnot atributu
 - pro každou hodnotu atributu budeme mít bit-vektor
 - hodí se pro dotazy jako WHERE a=5 or a=7
 - nevýhody
     - musíme to ukládat 
-    - update: nová hodnota - nový array, nový záznam - upravíme všechny arrays
+    - update: 
+        - nová hodnota - nový array
+        - nový záznam - upravíme všechny arrays
 - výhody
     - rychlé bitové operace, můžeme aplikovat i na range queries
     - jednoduché kombinování více indexů dohromady
@@ -577,11 +706,11 @@ Proč defragmentace?
     - obvykle tam je málo jedniček a hodně nul - nuly na konci zanedbáme
     - Run-Length Encoding (RLE)
         - bloky nul následovaných jedničkou
-        - blok má délku i
-        - zakódujeme i v binárce - délka čísla vyjádřená jako samé 1 a na konci 0 + samotné číslo
+        - blok má délku $i$
+        - zakódujeme $i$ v binárce - délka čísla vyjádřená jako samé 1 a na konci 0 + samotné číslo
         - vyplatí se, protože máme dlouhé úseky nul
 - implementace
-    - jak najít bit-array pro daná klíč
+    - jak najít bit-array pro daný klíč
         - B+tree pro klíče, v listech pointery na bit arrays
     - když máme array, jak dostat records
         - jak dostat record r
@@ -595,7 +724,9 @@ Proč defragmentace?
         - not fixed record number
             - moc se nepoužívá, můžeme přeorganizovat všechno
 - order of magnitude improvement compared to table scan
-- itmaps are best suited for multiple conditions on several attributes, each having a low selectivity
+- bitmaps are best suited for multiple conditions on several attributes, each having a low selectivity
+
+![](../obrazky/4_databaze/rle.png)
 
 ### Multi-key / composite index
 
@@ -620,6 +751,9 @@ Proč defragmentace?
 - clustered index = index-sequential file / B+file
     - records are stored in leaf nodes and cannot be accessed in any other way than by this index
 - non-clustered index = secondary index / B+tree
+
+*A clustered index means you are telling the database to store close values actually close to one another on the disk. This has the benefit of rapid scan / retrieval of records falling into some range of clustered index values.*
+
 - covering index
     - dotaz může být úplně zodpovězen jenom s tímhle indexem
 - indexed view
@@ -641,10 +775,10 @@ Proč defragmentace?
 ### Overview on Query Optimization 
 
 - input: SQL query
-- parser -> parse tree
-- translate -> logical query plan
-- rules -> "improved" logical query plan
-- estimate sizes -> "improved" logical query plan with sizes
+- parser $\to$ parse tree
+- translate $\to$ logical query plan
+- rules $\to$ "improved" logical query plan
+- estimate sizes $\to$ "improved" logical query plan with sizes
 - create physical query plans
 - estimate costs of physical query plans
 - choose best 
@@ -670,9 +804,9 @@ Proč defragmentace?
         - sum - ve výsledku součet počtů ze vstupu
         - kterou možnost použít?
             - suma pro union, maximum pro disjunctive predicates (or)
-    - některá pravidla na nelze pro bags aplikovat
+    - některá pravidla nelze pro bags aplikovat
         - associativity of except: $R – (S – T)$
-        - distributivity: $R \cap (S \cup T) != (R \cap S) \cup (R \cap T)$
+        - distributivity: $R \cap (S \cup T) \neq (R \cap S) \cup (R \cap T)$
 
 **Transformační pravidla**
 
@@ -680,27 +814,28 @@ Proč defragmentace?
 - substitution of product and selection by join
 - **combining select and natural join**
     - definice
-        - p = expr. containing only attrs. of R
-        - q = expr. containing only attrs. of S
-        - m = expr. containing attrs. of both R, S
+        - $p$ = expr. containing only attrs. of R
+        - $q$ = expr. containing only attrs. of S
+        - $m$ = expr. containing attrs. of both R, S
     - $\sigma_p(R \bowtie S)= [\sigma_p(R)] \bowtie S$, $\sigma_q(R \bowtie S)= R \bowtie [\sigma_q(S)]$
         - můžeme odvodit další pravidla, třeba $\sigma_{p\land q \land m}(R \bowtie S)= \sigma_m[\sigma_p(R) \bowtie \sigma_q(S)]$
 - **combining project and select**
     - definice
-        - x = attribute subset of R
-        - a = attributes referenced in expr. p (subset of R)
-        - y = attribute subset S
-        - z = attributes common in R and S
+        - $x$ = attribute subset of R
+        - $a$ = attributes referenced in expr. p (subset of R)
+        - $y$ = attribute subset S
+        - $z$ = attributes common in R and S
     - $\pi_x[\sigma_p(R)]=\pi_x[\sigma_p(\pi_{xa}(R))]$
     - $\pi_{xy}(R \bowtie S) = \pi_{xy}([\pi_{xz}(R)]\bowtie[\pi_{yz}(S)])$
 - **combining select and union**
     - $\sigma_p(R\cup_{sum}S)=\sigma_p(R)\cup_{sum}\sigma_p(S)$
 - **combining select and except**
-    - $\sigma_p(R-S)=\sigma_p(R)-S=\sigma_p(R)-sigma_p(S)$
+    - $\sigma_p(R-S)=\sigma_p(R)-S=\sigma_p(R)-\sigma_p(S)$
     - můžeme aplikovat selekci na S abychom zmenšili relaci před odčítáním
 
 **Jaké jsou dobré transformace**
 
+- žádná transformace není "vždycky dobrá"/
 - obecně chceme co nejrychleji co nejvíc zmenšit množství records, se kterými pracujeme
     - select early
     - project early
@@ -715,12 +850,12 @@ Proč defragmentace?
 
 **Estimating Result Size**
 
-- keep statistics for relation R
-    - T(R) – # tuples in R
-    - S(R) – # of bytes in each R tuple (udržujeme průměrnou délku, i když maximum může být větší)
-        - S(R,A) – length in bytes of values of attribute A
-    - B(R) – # of blocks to hold all R tuples
-    - V(R, A) – # distinct values in R for attribute A
+- keep statistics for relation $R$
+    - $T(R)$ – počet tuples in $R$
+    - $S(R)$ – počet bytes in each $R$ tuple (udržujeme průměrnou délku, i když maximum může být větší)
+        - $S(R,A)$ – length in bytes of values of attribute $A$
+    - $B(R)$ – počet blocks to hold all $R$ tuples
+    - $V(R, A)$ – počet distinct values in $R$ for attribute $A$
 - pro dobrý odhad musíme udržovat statistiky aktuální
 - **kartézský součin** $W=R_1\times R_2$
     - $T(W)=T(R_1)\cdot T(R_2)$
@@ -840,17 +975,17 @@ Proč defragmentace?
     - předpoklady
         - vstup je čten z disku
         - výstup zachováme v paměti
-        - CPU cost můžeme zanedbat, protože čtení a psané disku je mnohem pomalejší
+        - CPU cost můžeme zanedbat, protože čtení a psaní na disku je mnohem pomalejší
         - v distribuovaných databázích musíme uvažovat síťovou komunikaci
         - **estimated costs of operation= number of read and write accesses to disk**
 
 ### Operation Cost Estimation
 - parametry
-    - B(R) – size of relation R in blocks
-    - f(R) – max. record count to store in a block
-    - M – max. RAM buffers available (in blocks)
-    - HT(i) – depth of index i (in levels)
-    - LB(i) – sum of all leaf nodes of index i
+    - $B(R)$ – size of relation R in blocks
+    - $f(R)$ – max. record count to store in a block
+    - $M$ – max. RAM buffers available (in blocks)
+    - $HT(i)$ – depth of index $i$ (in levels)
+    - $LB(i)$ – sum of all leaf nodes of index $i$
 - implementace operací
     - založené na konceptu iterátoru
         - open - inicializace
@@ -859,76 +994,86 @@ Proč defragmentace?
     - výhody
         - výsledek není vracen naráz, takže nezabírá hlavní paměť, may not be
 materialized on a disk, můžeme použít pipelining
-- **table scan**
-    - relace R není prokládaná
-        - reading cost B(R)
-        - TwoPhase-MergeSort = 3B(R) reads and writes
-            - final writing ignored
-    - relace R je prokládaná
-        - reading costs are up to T(R) blocks! (pokud v každém bloku máme jeden záznam z R a jinak něco dalšího)
-        - TwoPhase-MergeSort T(R) + 2B(R) reads and writes
-- **index scan**
-    - čteme relaci s použitím indexu
-    - skenování indexu, pokud vyhovuje podmínce, tak teprve čteme záznamy
-    - výhody: můžeme skenovat jenom část indexu
-- **one pass algorithms**
-    - implementace: read relation → processing → output buffers, zpracováváme záznamy jeden po druhém
-    - projekce, selekce - costs B(R)
-    - agregace (group by) - costs B(R)
-        - procedura: vytvoříme skupiny pro group-by atributy, uložíme akumulované hodnoty z agregačních funkcí
-        - interní struktury
-            - zorganizujeme hodnoty grouping atributů (třeba hashováním)
-    - množinové operace, cross product - costs B(R)+B(S)
-        - požadavek: menší z relací se vejde do M-2
-        - menší relace (S) je v paměti, větší (R) se čte po blocích z disku
-        - implementace: vytvoříme si dočasnou vyhledávací strukturu (hashování)
-        - union
-            - přečteme S, vytvoříme prohledávací strukturu
-                - eliminace duplikátů, hned vrátíme unikátní hodnoty
-            - čteme R a pro každý záznam zkontrolujeme jeho existenci v S
-                - když tam je, tak přeskočíme, když ne, tak ho dáme na výstup a přidáme do struktury
-            - limitace: B(R)+B(S) <= M-2 (musí se vejít výstup)
-        - intersection
-            - přečteme S, vytvoříme prohledávací strukturu
-                - eliminace duplikátů
-            - čteme R a pro každý záznam zkontrolujeme jeho existenci v S
-                - když tam je, tak ho vrátíme a smažeme z prohledávací struktury
-            - limitace: min(B(R),B(S)) <= M-2 (musí se vejít výstup)
-        - multiset (bag) operations
-            - upravíme ty výše, v prohledávací struktuře si pro intersect udržujeme počet, když klesne na 0, tak prvek smažeme
-    - eliminace duplicit (distinct) - costs B(R)
-        - procedura - otestuji, jestli hodnota už je ve výstupu, pokud ne, vrátím daný záznam
-        - jak testovat existenci ve výstupu? 
-            - uložíme již viděné hodnoty v paměti
-                - bez datové struktury můžeme udělat až $n^2$ porovnání, jinak můžeme použít hashování
-            - limitace B(R) < M-1
-    - cross product
-    - natural join
-        - předpokládejme relace R(X,Y),S(Y,Z)
-        - přečteme S a vytvoříme prohledávací strukturu na Y
-        - pro každý záznam z R najdeme matching records z S
-            - vrátíme konkatenaci všech kombinací, jenom eliminujeme opakování Y
-- **join algorithms**
-    - když se žádná z relací nevejde do paměti
-    - základní varianta: nested-loop join
-        - přečteme jeden záznam z R a všechny z S a tak dokola, costs = T(S)(1+T(R))
-    - block-based nested-loop join
-        - čteme po blocích, R – inner relation, S – outer relation, costs = B(S)(1+B(R))
-    - cached Block-based Nested-loop Join
-        - přečteme naráz M-2 bloků relace S, relaci R čteme blok po bloku, join records
-        - costs = B(S)/(M-2)(M-2 + B(R))
-    - vždy použít blocked variant
-    - načíst menší relaci do paměti, pokud M>>3
-    - je důležité, jak jsou záznamy uložené, chceme non-interlaced, protože potřebují jen B(R) I/Os
-- **two-pass algorithms**
-    - procedura: předzpracujeme vstupní relace a uložíme (sorting, hashing), provedeme operaci
-    - operace: joins, duplicate elimination (distinct), agregace (group by), možinové operace
-    - **join algorithms – MergeJoin** $R \bowtie S, R(X,Y), S(Y,Z)$
-        - preprocessing je drahý, taže se vyplatí až pro fakt velké relace
-        - costs
-            - MergeSort of R and S: 4(B(R) + B(S))
-            - MergeJoin: B(R) + B(S)
-        - porovnání složitosti (počítány operace čtení/zápisu na disk) s cached Block-based Nested-loop Join: lineární (MergeJoin) vs kvadratická, takže od určité velikosti relací se to vyplatí
+
+#### Table scan
+
+- relace $R$ není prokládaná
+    - reading cost $B(R)$
+    - TwoPhase-MergeSort = $3B(R)$ reads and writes
+        - final writing ignored
+- relace $R$ je prokládaná
+    - reading costs are up to $T(R)$ blocks! (pokud v každém bloku máme jeden záznam z $R$ a jinak něco dalšího)
+    - TwoPhase-MergeSort $T(R) + 2B(R)$ reads and writes
+
+#### Index scan
+
+- čteme relaci s použitím indexu
+- skenování indexu, pokud vyhovuje podmínce, tak teprve čteme záznamy
+- výhody: můžeme skenovat jenom část indexu
+
+#### One pass algorithms
+
+- implementace: read relation → processing → output buffers, zpracováváme záznamy jeden po druhém
+- projekce, selekce - costs $B(R)$
+- agregace (group by) - costs $B(R)$
+    - procedura: vytvoříme skupiny pro group-by atributy, uložíme akumulované hodnoty z agregačních funkcí
+    - interní struktury
+        - zorganizujeme hodnoty grouping atributů (třeba hashováním)
+- množinové operace, cross product - costs $B(R)+B(S)$
+    - požadavek: menší z relací se vejde do $M-2$
+    - menší relace (S) je v paměti, větší (R) se čte po blocích z disku
+    - implementace: vytvoříme si dočasnou vyhledávací strukturu (hashování)
+    - union
+        - přečteme $S$, vytvoříme prohledávací strukturu
+            - eliminace duplikátů, hned vrátíme unikátní hodnoty
+        - čteme $R$ a pro každý záznam zkontrolujeme jeho existenci v $S$
+            - když tam je, tak přeskočíme, když ne, tak ho dáme na výstup a přidáme do struktury
+        - limitace: $B(R)+B(S) \leq M-2$ (musí se vejít výstup)
+    - intersection
+        - přečteme $S$, vytvoříme prohledávací strukturu
+            - eliminace duplikátů
+        - čteme $R$ a pro každý záznam zkontrolujeme jeho existenci v $S$
+            - když tam je, tak ho vrátíme a smažeme z prohledávací struktury
+        - limitace: $min(B(R),B(S)) \leq M-2$ (musí se vejít výstup)
+    - multiset (bag) operations
+        - upravíme ty výše, v prohledávací struktuře si pro intersect udržujeme počet, když klesne na 0, tak prvek smažeme
+- eliminace duplicit (distinct) - costs $B(R)$
+    - procedura - otestuji, jestli hodnota už je ve výstupu, pokud ne, vrátím daný záznam
+    - jak testovat existenci ve výstupu? 
+        - uložíme již viděné hodnoty v paměti
+            - bez datové struktury můžeme udělat až $n^2$ porovnání, jinak můžeme použít hashování
+        - limitace $B(R) < M-1$
+- cross product
+- natural join
+    - předpokládejme relace $R(X,Y),S(Y,Z)$
+    - přečteme $S$ a vytvoříme prohledávací strukturu na $Y$
+    - pro každý záznam z $R$ najdeme matching records z $S$
+        - vrátíme konkatenaci všech kombinací, jenom eliminujeme opakování $Y$
+
+#### Join algorithms
+
+- když se žádná z relací nevejde do paměti
+- základní varianta: nested-loop join
+    - přečteme jeden záznam z $R$ a všechny z $S$ a tak dokola, costs $= T(S)(1+T(R))$
+- block-based nested-loop join
+    - čteme po blocích, $R$ – inner relation, $S$ – outer relation, costs $= B(S)(1+B(R))$
+- cached Block-based Nested-loop Join
+    - přečteme naráz $M-2$ bloků relace $S$, relaci $R$ čteme blok po bloku, join records
+    - costs $= B(S)/(M-2)(M-2 + B(R))$
+- vždy použít blocked variant
+- načíst menší relaci do paměti, pokud $M>>3$
+- je důležité, jak jsou záznamy uložené, chceme non-interlaced, protože potřebují jen $B(R)$ I/Os
+
+#### Two-pass algorithms
+
+- procedura: předzpracujeme vstupní relace a uložíme (sorting, hashing), provedeme operaci
+- operace: joins, duplicate elimination (distinct), agregace (group by), možinové operace
+- **join algorithms – MergeJoin** $R \bowtie S, R(X,Y), S(Y,Z)$
+    - preprocessing je drahý, taže se vyplatí až pro fakt velké relace
+    - costs
+        - MergeSort of R and S: 4(B(R) + B(S))
+        - MergeJoin: B(R) + B(S)
+    - porovnání složitosti (počítány operace čtení/zápisu na disk) s cached Block-based Nested-loop Join: lineární (MergeJoin) vs kvadratická, takže od určité velikosti relací se to vyplatí
 ```
 setřídíme R a S podle Y
 i=j=1
@@ -945,89 +1090,88 @@ funkce doJoin():
         i++
     j = j2
 ```
-- **two-pass algorithms pokračování**
-    - **join algorithms – SortJoin** $R \bowtie S, R(X,Y), S(Y,Z)$
-        - vychází z Merge join, ale není nutné mít relace kompletně setřízené
-        - uděláme první část MergeSort, tedy sort runs
-        - najdeme nejmenší hodnotu atributu, na kterém děláme join, najdeme odpovídající záznamy a provedeme join
-        - in case too many records with the same Y block-nested-loop join in the remaining memory
-        - costs
-            - Sorted runs: 2(B(R) + B(S))
-            - Joining: B(R) + B(S)
-        - limitations: run length = M, number of runs < M, B(R)+B(S) < M(M-1)
-    - **join algorithms – HashJoin** $R \bowtie S, R(X,Y), S(Y,Z)$
-        - define a hash function for attributes Y
-        - create hashed index of R and S
-            - address space is M-1 buckets
-        - for each i in [0,M-2]
-            - přečteme bucket i pro R i pro S
-            - find matching records and join them
-        - joining buckets
-            - read whole bucket of S (≤ M-2) (may create an internal structure to speed up)
-            - read bucket of R block by block
-        - costs:
-            - create hashed index: 2(B(R)+B(S))
-            - bucket joining: B(R)+B(S)
-        - limitations: všechny buckety S musí být menší než M-2
-        - optimalizace - udržujeme nějaké buckety v paměti (HybridHashJoin)
-    - **join algorithms – Hashing Pointers** $R \bowtie S, R(X,Y), S(Y,Z)$
-        - organize pointers to records instead of records themselves
-            - store pairs [key value, rec. pointer] in buckets
-        - joining - if match, we must read the records
-    - **join algorithms – IndexJoin** $R \bowtie S, R(X,Y), S(Y,Z)$    
-        - předpokládáme index na atributu Y z R
-        - procedura: pro každý záznam z S najdeme matches v indexu, každý z nich zkonkatenujeme s původním záznamem a vrátíme
-    - shrnutí join algorithms
-        - cached Block-based Nested-loop Join
-            - hodí se pro malé relace
-        - HashJoin
-            - pokud máme na atributech rovnost, relations are not sorted or no indexes
-        - SortJoin
-            - good for non-equi-joins, e.g. R.Y > S.Y
-        - MergeJoin
-            - když už jsou uspořádané
-        - IndexJoin
-            - když existuje index, může být užitečný, záleží na očekávané velikosti výsledku
-    - **duplicate elimination**
-        - using sorting 
-            - první část MergeSort, máme sorted runs na disku
-            - čteme je blok po bloku, vždy vrátíme nejmenší hodnotu a přeskočíme všechny stejné
-            - costs = 3B(R) jako MergeSort
-            - limitations: B(R) <= M(M-1)
-        - using hashing
-            - rozdělíme R do M-1 bucketů, které uložíme na disk
-            - pro každý bucket načteme do paměti, vytřídíme duplicity a zbytek vrátíme
-            - costs = 3B(R)
-            - limitations: B(R) <= (M-1)^2
-    - **aggregations**
-        - using sorting 
-            - stejně jako duplicate elimination, když čteme blok po bloku, tak místo zahození stejných hodnot děláme group, když už projdeme všechny tak spočítáme agregaci
-        - using hashing
-            - analogicky jako duplicate elimination
-    - **set union**
-        - using sorting 
-            - opět sorted runs on disk, tentokrát z R i z S naráz
-            - postupně vrátíme všechno, jen přeskočíme duplicity
-            - costs = 3(B(R)+B(S))
-        - using hashing
-            - bucketize R and S (the same hash function, M-1 buckets)
-            - process pair of buckets Ri, Si 
-                - jeden načti do paměti, druhý blok po bloku
-                - potřebujeme eliminovat duplicity - vytvoříme v paměti hash-table
-    - **set/bag intersection and difference**
-        - using sorting 
-            - opět sorted runs on disk z R i z S naráz
-            - postupně čteme all runs a počítáme výskyty t v S a v R (zvlášť)
-            - pro průnik vrátíme t, pokud jsou počty v obou nenulové
-            - pro bag průnik vrátíme t tolikrát, kolik je minimum počtů
-            - pro R-S vrátníme t pokud je počet v R nenulový a v S nulový
-            - pro bag variantu R-S vrátíme t tolikrát, kolik je maximum z #R-#S a 0
-            - costs = 3(B(R)+B(S))
-        - using hashing
-            - bucketize R and S (the same hash function, M-1 buckets)
-            - process pair of buckets Ri, Si 
-                - pro set intersection (menší relace S) načteme bucket S do paměti a kontrolujeme, co z něj je v R
-                - pro rozdíl R-S, abychom eliminovali duplicity v R, tak načteme bucket z R do paměti 
+- **join algorithms – SortJoin** $R \bowtie S, R(X,Y), S(Y,Z)$
+    - vychází z Merge join, ale není nutné mít relace kompletně setřízené
+    - uděláme první část MergeSort, tedy sort runs
+    - najdeme nejmenší hodnotu atributu, na kterém děláme join, najdeme odpovídající záznamy a provedeme join
+    - in case too many records with the same Y block-nested-loop join in the remaining memory
+    - costs
+        - Sorted runs: 2(B(R) + B(S))
+        - Joining: B(R) + B(S)
+    - limitations: run length = M, number of runs < M, B(R)+B(S) < M(M-1)
+- **join algorithms – HashJoin** $R \bowtie S, R(X,Y), S(Y,Z)$
+    - define a hash function for attributes Y
+    - create hashed index of R and S
+        - address space is M-1 buckets
+    - for each i in [0,M-2]
+        - přečteme bucket i pro R i pro S
+        - find matching records and join them
+    - joining buckets
+        - read whole bucket of S (≤ M-2) (may create an internal structure to speed up)
+        - read bucket of R block by block
+    - costs:
+        - create hashed index: $2(B(R)+B(S))$
+        - bucket joining: $B(R)+B(S)$
+    - limitations: všechny buckety $S$ musí být menší než $M-2$
+    - optimalizace - udržujeme nějaké buckety v paměti (HybridHashJoin)
+- **join algorithms – Hashing Pointers** $R \bowtie S, R(X,Y), S(Y,Z)$
+    - organize pointers to records instead of records themselves
+        - store pairs [key value, rec. pointer] in buckets
+    - joining - if match, we must read the records
+- **join algorithms – IndexJoin** $R \bowtie S, R(X,Y), S(Y,Z)$    
+    - předpokládáme index na atributu Y z R
+    - procedura: pro každý záznam z S najdeme matches v indexu, každý z nich zkonkatenujeme s původním záznamem a vrátíme
+- shrnutí join algorithms
+    - cached Block-based Nested-loop Join
+        - hodí se pro malé relace
+    - HashJoin
+        - pokud máme na atributech rovnost, relations are not sorted or no indexes
+    - SortJoin
+        - good for non-equi-joins, e.g. R.Y > S.Y
+    - MergeJoin
+        - když už jsou uspořádané
+    - IndexJoin
+        - když existuje index, může být užitečný, záleží na očekávané velikosti výsledku
+- **duplicate elimination**
+    - using sorting 
+        - první část MergeSort, máme sorted runs na disku
+        - čteme je blok po bloku, vždy vrátíme nejmenší hodnotu a přeskočíme všechny stejné
+        - costs = 3B(R) jako MergeSort
+        - limitations: B(R) <= M(M-1)
+    - using hashing
+        - rozdělíme R do M-1 bucketů, které uložíme na disk
+        - pro každý bucket načteme do paměti, vytřídíme duplicity a zbytek vrátíme
+        - costs = 3B(R)
+        - limitations: B(R) <= (M-1)^2
+- **aggregations**
+    - using sorting 
+        - stejně jako duplicate elimination, když čteme blok po bloku, tak místo zahození stejných hodnot děláme group, když už projdeme všechny tak spočítáme agregaci
+    - using hashing
+        - analogicky jako duplicate elimination
+- **set union**
+    - using sorting 
+        - opět sorted runs on disk, tentokrát z R i z S naráz
+        - postupně vrátíme všechno, jen přeskočíme duplicity
+        - costs = 3(B(R)+B(S))
+    - using hashing
+        - bucketize R and S (the same hash function, M-1 buckets)
+        - process pair of buckets Ri, Si 
+            - jeden načti do paměti, druhý blok po bloku
+            - potřebujeme eliminovat duplicity - vytvoříme v paměti hash-table
+- **set/bag intersection and difference**
+    - using sorting 
+        - opět sorted runs on disk z R i z S naráz
+        - postupně čteme all runs a počítáme výskyty t v S a v R (zvlášť)
+        - pro průnik vrátíme t, pokud jsou počty v obou nenulové
+        - pro bag průnik vrátíme t tolikrát, kolik je minimum počtů
+        - pro R-S vrátníme t pokud je počet v R nenulový a v S nulový
+        - pro bag variantu R-S vrátíme t tolikrát, kolik je maximum z #R-#S a 0
+        - costs = 3(B(R)+B(S))
+    - using hashing
+        - bucketize R and S (the same hash function, M-1 buckets)
+        - process pair of buckets Ri, Si 
+            - pro set intersection (menší relace S) načteme bucket S do paměti a kontrolujeme, co z něj je v R
+            - pro rozdíl R-S, abychom eliminovali duplicity v R, tak načteme bucket z R do paměti 
 
 ## Query tunning
 
@@ -1057,7 +1201,7 @@ funkce doJoin():
     - comparison with NULL
 - pozor na '=' versus 'like'
     - rovnítko může použít index, like prochází všechno (seq scan)
-- pokud používáme aggregate functions, nebo order by s limit 1, nebo obecně nějaké funkce na výsledku, tak je chceme použít až úplně na konec, abychom nenarušili činnost indexů
+- pokud používáme aggregate functions, nebo order by s limit 1, nebo obecně nějaké funkce na výsledku, tak je chceme použít až úplně na konci, abychom nenarušili činnost indexů
 
 **Eliminate unneeded DISTINCTs**
 
@@ -1065,8 +1209,8 @@ funkce doJoin():
 - a table T is called privileged if the fields returned by the select contain a key of T
 - suppose that R is joined on equality by its key field to some other table S, then we say R reaches S (transitive relation)
 - There will be no duplicates among the records returned by a selection, even in the absence of DISTINCT if one of the two following conditions hold: 
-        - Every table mentioned in the FROM clause is privileged. 
-        - Every unprivileged table reaches at least one privileged table
+    - Every table mentioned in the FROM clause is privileged. 
+    - Every unprivileged table reaches at least one privileged table
 
 **Rewriting Nested Queries**
 
@@ -1169,18 +1313,18 @@ funkce doJoin():
 - reversed-key index
     - specialita Oraclu
     - increases index updates throughput (number of insertions / updates per second)
-    - myšlenka: hodnoty klíčů mám uložené obráceně (123 - 321), takže i když je genetujeme postupně, tak je ukládáme daleko od sebe a nemusíme čekat na ten jeden blok na konci (diminishes collisions in concurrent index updates) 
+    - myšlenka: hodnoty klíčů mám uložené obráceně (123 - 321), takže i když je generujeme postupně, tak je ukládáme daleko od sebe a nemusíme čekat na ten jeden blok na konci (diminishes collisions in concurrent index updates) 
 
 **Schema Tuning**
 
 - relation schema - relation name and a list of attributes, their types and integrity constraints
 - database schema - schema of all relations
 - **Theory of Good Schema**
-    - functional dependency A->B
+    - functional dependency A $\to$ B
         - value of attr. B is determined if we know the value of attr. A
     - primary key K
-        - K->R
-        - pro žádnou podmnožinu K zvanou L neplatí L->R
+        - K $\to$ R
+        - pro žádnou podmnožinu K zvanou L neplatí L $\to$ R
     - schema normalization
         - 1NF - všechny atributy jsou atomické (nemáme v jednom sloupečku víc věcí)
         - 2NF - všechny atributy závisí na celém klíči (můžou tranzitivně)
@@ -1235,7 +1379,7 @@ funkce doJoin():
             - na úrovni záznamů nebo celých relací/tabulek
             - pravidla
                 - transakce musí mít zámek na x předtím, než k němu přistoupí
-                - transakce nesmí získaz zámek na žádné pložce y poté, co uvolní zámek na x
+                - transakce nesmí získat zámek na žádné položce y poté, co uvolní zámek na x
                 - zajišťují správnost
                     - nemůžeme updatovat data pokud je zamkl někdo jiný
             - vliv na výkon: když máme víc zámků, je pravděpodobnější, že budeme někde čekat, takže to bude pomalejší
@@ -1297,7 +1441,7 @@ funkce doJoin():
 
 - změny v transakci jsou hned propagovány na disk, logujeme původní hodnotu
 - když si nejsme 100% jistí, že vše proběhlo správně, tak vrátíme poslední konzistentní stav databáze
-- nepraktické, když máme buffer a změny jsou na disk propagovány z něj, tak se může stát, že mámezapsaný commit, ale nastane chyba při přenosu z bufferu na disk 
+- nepraktické, když máme buffer a změny jsou na disk propagovány z něj, tak se může stát, že máme zapsaný commit, ale nastane chyba při přenosu z bufferu na disk 
 - pravidla
     - před každým zápisem zalogujeme původní hodnotu
     - předtím, než je x modifikováno na disku (output(x)), log musí být na disku
@@ -1325,7 +1469,7 @@ funkce doJoin():
         - zapíšeme end do journalu
 - recovery after failure
     - S je množina transakcí, pro které je v logu commit, ale není tam end
-    - pro každou operaci v logi, v pořadí od nejstarší k nejnovější, pokud je příslušná transakce v S, tak zapíšu write(x,v) a output(x)
+    - pro každou operaci v logu, v pořadí od nejstarší k nejnovější, pokud je příslušná transakce v S, tak zapíšu write(x,v) a output(x)
     - pro všechny transakce v S zapíšu do logu end
     - storing changes by output(x)
         - když máme hodně transakcí s x, můžeme udělat output(x) jen pro poslední record
@@ -1355,7 +1499,7 @@ funkce doJoin():
 - recovery
     - finished (committed) transactions are re-done from beginning
     - unfinished transactions are rolled back (un-done) from end
-- non-quiescent Checkpoint
+- non-quiescent checkpoint
     - nezastavíme úplně zpracovávání transakcí, když potřebujeme checkpoint
     - zaregistrujeme aktivní transakce
     - uložíme začátek a konec checkpointu
@@ -1412,7 +1556,7 @@ funkce doJoin():
         - můžeme vytvořit vlastní funkci
     - tradiční index na x a y nebudou po některé dotazy fungovat
 - quad tree
-    - stromová datová struktura, každý vrchol rozděluje prostor na 2^d regionů stejné velikosti
+    - stromová datová struktura, každý vrchol rozděluje prostor na $2^d$ regionů stejné velikosti
         - v listech mohou být body
     - pro komplexnější data než body
         - prvky mohou být ve více regionech, obalené obdélníkem
@@ -1424,13 +1568,15 @@ funkce doJoin():
 
 ### Access Control
 
-**Authorization**
+#### Authorization
+
 - analogy to file systems
     - objects (file, directory, ...)
     - subject (typically: owner, group, others (all users))
-    - access Right defined on an object O for a subject S (typically: read, write, execute)
+    - access right defined on an object O for a subject S (typically: read, write, execute)
 
-**Privileges**
+#### Privileges
+
 - DB obvykle větší granularita než obyklý file systém
 - přístupy se liší pro objekty
     - tables, views, procedures, sequences, schema, database, …
@@ -1439,9 +1585,9 @@ funkce doJoin():
     - obvykle nazývány *authorization id* nebo *role*
 - pro relace/tabulky
     - SELECT: query the table’s content (i.e., list rows), sometimes can be limited to selects attributes
-    - INSERT: sometimes can be limited to selects attributes
+    - INSERT: sometimes can be limited to selected attributes
     - DELETE
-    - UPDATE: sometimes can be limited to selects attributes
+    - UPDATE: sometimes can be limited to selected attributes
     - REFERENCES: create foreign keys referencing this table
 - views as access control
     - vytvoříme view, kde například vybereme pro zaměstnance vše kromě platu, dáme právo select na view a odebereme ho na původní relace
@@ -1452,7 +1598,7 @@ funkce doJoin():
         - CASCADE - odebere se i všem, komu to dotyčný přeposlal
         - RESTRICT - pokud dotyčný někomu přeposlal, tak fail a musí se řešit jinak
 
-**Stored Procedures**
+#### Stored Procedures
 - user-defined program implementing an activity
     - examples: factorial computation, distance between GPS coords, inserting rows to multiple tables, ...
 - příklady: spočtení průměrné mzdy bez toho, aby uživatel viděl mzdy jednotlivých zaměstnanců
@@ -1461,7 +1607,7 @@ funkce doJoin():
     - DEFINER– run in the context of the owner of function
     - [particular user] – run in the context of the selected user
 
-**Attacks to DB system**
+#### Attacks to DB system
 - přes síťové připojení
     - otevřený DB port - použij firewall
 - přihlášení

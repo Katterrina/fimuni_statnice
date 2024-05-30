@@ -62,7 +62,7 @@ def decision_tree(examples,features):
 ### Computational complexity of tree learning
 
 - worst case: each branch tests all features
-    - n examples, m features -> tree depth m
+    - n examples, m features $\to$ tree depth m
     - at each level examine the remaining m-i features for each example at the level to calculate info gains ($\sum_{i=1}^m = O(nm^2)$)
 - in practice
     - learned tree is rarely complete
@@ -101,7 +101,7 @@ def decision_tree(examples,features):
 ### Regression tree impurity measures
 
 - we want minimum variation in the nodes after the split
-    - impurity of a node -> variance $Var(Y)=\frac{1}{|Y|}\sum_{y\in Y}(y-\bar{y})^2$
+    - impurity of a node $\to$ variance $Var(Y)=\frac{1}{|Y|}\sum_{y\in Y}(y-\bar{y})^2$
 - the most common split measure used is just the weighted variance of the nodes
     - $Var(Y_1,...,Y_l) = \sum_{i=1}^l \frac{|Y_i|}{|Y|} Var(Y_i)$
 
@@ -225,7 +225,7 @@ def test_AdaBoost(example,H):
 ### Ensembles and bias-variance
 
 - bagging decreases the variance
-    - variance -> variance / number of ensemble members
+    - variance $\to$ variance / number of ensemble members
 - boosting decreases bias
     - hypothesis complexity increasing
 
@@ -423,7 +423,7 @@ while Fk not empty: # finding frequent itemsets
     Fk+1 := Ck+1 elements with support >= minsup
     k := k+1
 if ABCD, AB frequent and support(ABCD)/support(AB) >= minconf
-    AB -> CD[support(ABCD), support(ABCD)/support(AB)]
+    AB $\to$ CD[support(ABCD), support(ABCD)/support(AB)]
 ```
 
 ### Class-association rules
@@ -546,7 +546,7 @@ if ABCD, AB frequent and support(ABCD)/support(AB) >= minconf
 
 ### LOF (Local Outlier Factor)
 
-- LOF >> 1 -> outlier
+- LOF >> 1 $\to$ outlier
 - $dist_k(o)$ - distance from o to its k-th nearest neighbor
 - $reachdist_k(o,p) = max(dist_k(p), d(o,p))$
 - local reachability distance - $lrd$
@@ -597,7 +597,7 @@ if ABCD, AB frequent and support(ABCD)/support(AB) >= minconf
 - proximity matrix calculation
     - creating a random forest
     - after each tree is built, all of the data are run down the tree, and proximity values are computed for each pair of cases
-        - two cases occupy the same terminal node -> proximity +1
+        - two cases occupy the same terminal node $\to$ proximity +1
     - proximity values normalized by dividing by the number of trees
     - the average proximity is computed for each instance
 - outlier factor for an instance p is computed as a sum of three different measures of outlierness – inverse proximity to the members of the same class OF1, misclassification measure (proximity to the members of other classes) OF2, and ambiguity measure OF3
@@ -645,7 +645,7 @@ if ABCD, AB frequent and support(ABCD)/support(AB) >= minconf
 - ambiguity of the classes
     - the classes can not be distinguished using the data, regardless of the classification algorithm employed
 - sparsity and dimensionality of the data
-    - an incomplete or sparse dataset -> some input space regions underconstrained
+    - an incomplete or sparse dataset $\to$ some input space regions underconstrained
         - data in those regions are classified arbitrarily
 - complexity of the boundary separating the classes 
     - relates to the size of the smallest description needed to represent the classes
@@ -692,7 +692,7 @@ if ABCD, AB frequent and support(ABCD)/support(AB) >= minconf
     - e.g. outliers and mislabeled instances are expected to have high instance hardness since a learning algorithm will have to overfit to classify them correctly
     - what is the probability of instance misclassification?
 - instance $<x_i,y_i>$, quantity $p(y_i | x_i, h)$ measures the probability that $h$ assigns the label $y_i$ to the input feature vector $x_i$
-    - larger $p(y_i | x_i, h)$ -> higher probability of correct classification
+    - larger $p(y_i | x_i, h)$ $\to$ higher probability of correct classification
     - definition of instance hardness with respect to h: $IH_h(〈x_i, y_i〉) = 1 − p(y_i|x_i, h)$
         - simply an inverse of the probability of assigning the correct label
 -  Classifier Output Difference (COD) 
@@ -757,7 +757,7 @@ if ABCD, AB frequent and support(ABCD)/support(AB) >= minconf
 
 **Self-training algorithm**
 - assumption: high confidence predictions are correct
-- train on labeled -> predict unlabeled -> add those predictions as labeled data to training set -> repeat. 
+- train on labeled $\to$ predict unlabeled $\to$ add those predictions as labeled data to training set $\to$ repeat. 
 - variations: add only most confident/add all/add all and weight by confidence
 - advantages: simple, applies to existing classifiers, often used in NLP
 - disadvantages: early mistakes can reinforce themselves, and we don't know if it will converge
@@ -780,7 +780,7 @@ if ABCD, AB frequent and support(ABCD)/support(AB) >= minconf
 **S3VM**
 
 - assumption: Unlabeled data from different classes are separated by a large margin.
-- enumerate all possible labelings -> build SVM -> choose SVM with the largest margin (avoid unlabeled data in the margin)
+- enumerate all possible labelings $\to$ build SVM $\to$ choose SVM with the largest margin (avoid unlabeled data in the margin)
 - advantages: applicable wherever SVMs are applicable, clear mathematical framework
 - disadvantages: optimization is difficult, and can be trapped in bad local optima
 
