@@ -1,30 +1,23 @@
 # S4. Programování s omezujícími podmínkami
 
-> Algoritmy a konzistence: hranová, po cestě, k-konzistence, obecná hranová konzistence, konzistence mezí, směrové varianty, šířka grafu podmínek. Stromové prohledávání, pohled dopředu, pohled zpět, neúplná stromová prohledávání. Modelování pomocí omezujících podmínek, globální podmínky, omezující podmínky pro rozvrhování, programování pomocí CPLEX Optimization Programming Language. (PA163)
+> Algoritmy a konzistence: [hranová](#arc-consistency), [po cestě](#path-consistency), [k-konzistence](#k-consistency), [obecná hranová konzistence](#generalized-arc-consistency-gac), [konzistence mezí](#bound-consitency-bc), [směrové varianty](#directional-arc-consitency-dac), [šířka grafu podmínek](#graph-width). [Stromové prohledávání](#tree-search-and-heuristics), [pohled dopředu](#look-ahead-algorithms-la), [pohled zpět](#look-back-algorithms), [neúplná stromová prohledávání](#incomplete-tree-search). Modelování pomocí omezujících podmínek, [globální podmínky](#global-constraints), [omezující podmínky pro rozvrhování](#11-problém-splňování-podmínek), programování pomocí CPLEX Optimization Programming Language. (PA163)
 
-PA163 Constraint programming (Hana Rudová)
-===
+*poznámky na základě přednášek a materiálů Hany Rudové (PA163,PA167)*
 
-# Introdction
+# Úvod
 
-:::success
 Given a set of (domain) **variables** $Y=\{y_1,\ldots,y_k\}$ and a finite set of **domains** $D=D_1\cup\ldots\cup D_k$ (domain $D_i$ is set of values) the contraint $c$ on $Y$ is a subset of $D_1\times\ldots\times D_k$.
-:::
 
 - constraint is relation
 - $c$ constrains the values that variables can take simultaneously
 - the constraint $c$ defined on variables $y_1,\ldots,y_k$ is **satisfied** if $(d_1,\ldots,d_k)\in c$ holds for the values $d_i\in D_i$
 
-:::success
 Given a finite set of variables $Y=\{y_1,\ldots,y_k\}$, a finite set of domains $D=D_1\cup\ldots\cup D_k$ and a finite set of constraints $C=\{c_1,\ldots,c_k\}$ the **constraint satisfaction problem** is the tripple $(Y, D, C)$.
-:::
 
 - **partial assignment** - some variables have assigned their values
 - **complete assignment** - all variables have assigned values
 
-:::success
 A complete assignment of the variables that satisfies all constraints is the solution of CSP.
-:::
 
 - we look for
     - one solution (consistent solution, feasible solution)
@@ -93,7 +86,7 @@ A complete assignment of the variables that satisfies all constraints is the sol
 
 - **variables**: we convert the $k$-ary constraint $c_i$ to dual variable $v_i$ with a domain containing consistent $k$-tuples
 - **constraints**: for each pair of constraints $c_i$ and $c_j$ sharing variables, we introduce a binary constraint $R_{ij}$ between $v_i$ and $v_j$ restricting the dual variables to $k$-tuples, in which the shared variables have the same value
-    - relation $Rrs$ between $v_i$ and $v_j$ means that $r$-th coordinate of $v_i$ must be equal to the $s$-th coordinate of $v_j$
+    - relation $R_{rs}$ between $v_i$ and $v_j$ means that $r$-th coordinate of $v_i$ must be equal to the $s$-th coordinate of $v_j$
 
 - example:
     - variables: $x_1, \ldots, x_6 \in \{0,1\}$
@@ -175,7 +168,7 @@ def AC1(G):
     - revision $O(k^2)$
     - one loop deletes (in worst case) just one value from the domain, in total of $nk$ values (each variable has up to k values in its domain) $\rightarrow O(nk)$
 - inefficient
-    - even if we change a single domain, all arcs must be revised, ut these arcs may not be affected by the revision at all - we can do better $\rightarrow$ AC-3
+    - even if we change a single domain, all arcs must be revised, but these arcs may not be affected by the revision at all - we can do better $\rightarrow$ AC-3
 
 ### Algorithm AC-3
 
@@ -197,8 +190,8 @@ def AC3(G):
 - complexity $O(ek^3)$
     - revision $O(k^2)$
     - total number of arc/constraints $O(e)$
-    - each constraint can be queued at most 2k times $\rightarrow O(k)$
-        - once a constraint is added to the queue, the domain (k) of one of its two variables (2) has been reduced by at least one value
+    - each constraint can be queued at most $2k$ times $\rightarrow O(k)$
+        - once a constraint is added to the queue, the domain ($k$) of one of its two variables (2) has been reduced by at least one value
 - often used, but not optimal
 
 ### Value support
@@ -206,8 +199,8 @@ def AC3(G):
 - definition: support for $a \in D_i := \{<j,b>| b\in D_j, (a,b) \in c_{i,j}\}$
     - value $y$ in $D_j$ supports value $x$ in $D_i$ if $V_i=x, V_j=y$ satisfies all binary constraints over $V_i, V_j$
 - use supports in a consistency algorithm
-    - maintain for each value a list of values that it support
-        - it knows who to tell if it disappear
+    - maintain for each value a list of values that it supports
+        - it knows who to tell if it disappears
     - maintain for each value count of its supports 
 
 ```python
@@ -282,7 +275,7 @@ def AC_2001(G):
         j = Q.pop(0)
         for i in G.nodes:
             if (i,j) in G.edges:
-            if revise((i,j)):
+            if revise_2001((i,j)):
                 if len(Di) == 0: # it might happen during revise_2001
                     return fail
                 Q.add(i)
@@ -311,9 +304,9 @@ def AC_2001(G):
 
 ### PC and AC relationship
 
-- PC$\implies$AC
+- PC $\implies$ AC
     - arc is AC, if the path $(X,Y,X)$ is PC
-- PC$\;\not\!\!\!\implies$AC
+- AC $\;\not\!\!\!\implies$ PC
     - example: $X,Y,Z \in {0,1}$ constraints $X \neq Y,Y \neq Z, Z \neq X$ 
     - is AC, but not PC
         - $X=1,Y=0$ cannot be extended along the path $(X,Y,Z)$
@@ -397,9 +390,9 @@ def PC2(G):
 
 # Non-binary constraints
 
-- generalization of NC, AC, and PC principles towards k-consistency
+- generalization of NC, AC, and PC principles towards $k$-consistency
     - interesting in terms of problem-solving complexity
-    - works with arbitrary k-tuples of variables
+    - works with arbitrary $k$-tuples of variables
     - not used in practice due to memory and time complexity
 - **global constraints**
     - specific types of consistencies 
@@ -407,11 +400,11 @@ def PC2(G):
 
 ## k-consistency
 
-:::success
+
 CSP is $k$-consistent $\iff$ any consistent ($k$-1) valuation of different variables can be extended to any $k$-th variable.
 
 CSP is strongly $k$-consistent $\iff$ it is $j$-consistent for every $j\leq k$.
-:::
+
 
 - strong $k$-consitency $\implies$ $k$-consistency
 - strong $k$-consitency $\implies$ $\forall j \leq k$: $j$-consistency
@@ -432,14 +425,10 @@ CSP is strongly $k$-consistent $\iff$ it is $j$-consistent for every $j\leq k$.
 ### Consistency and solutions
 
 - CSP can be solved without bactracking with respect to the ordering of the variables $(x_1, ..., x_n)$ if for each $i\leq n$, each partial solution $(x_1, ..., x_i)$ can be consistently extended by a variable $x_{i+1}$
-- solution without backtracking for any ordering of variables - strong $n$-consistency is required for a graph with n vertices
+- solution without backtracking for any ordering of variables - strong $n$-consistency is required for a graph with $n$ vertices
     - $n$-consitency is not enough
     - strong $k$-consistency for $k<n$ is not enough
         - example: complete graph of $n$ nodes, edges $\neq$, domains $\{1,...,n-1\}$
-
-:::danger
-doplnit příklad: $n$-consitency is not enough
-:::
 
 ### Generalized arc consistency (GAC)
 
@@ -458,7 +447,7 @@ doplnit příklad: $n$-consitency is not enough
 
 ### Bound consitency (BC)
 
-- the constraint $c$ is generalized arc consistent if every value $a$ of every variable $x \in scope(c)$ has a interval support in $c$
+- the constraint $c$ is bound consistent if every value $a$ of every variable $x \in scope(c)$ has a interval support in $c$
     - the value $a$ of the variable $x \in scope(c)$ has interval support $\vec{t}$ in $c$, if 
         - $\vec{t}\in c$ 
         - $a\in \vec{t}[x]$
@@ -479,12 +468,12 @@ doplnit příklad: $n$-consitency is not enough
 ### Algorithms
 
 - extension of arc revision and path revision
-    - gradually remove elements from the relation over (k-1) variables
-- update the relation over each (k-1)-tuple of variables
-    - we have to remember the (k-1)-tuples of values
+    - gradually remove elements from the relation over $(k-1)$ variables
+- update the relation over each $(k-1)$-tuple of variables
+    - we have to remember the $(k-1)$-tuples of values
 - general algorithm
     - extension of AC-1 and PC-1
-    - repeating revisions over (k-1)-tuples as long as changes occur 
+    - repeating revisions over $(k-1)$-tuples as long as changes occur 
 - not used in practice for higher k because of high memory and time complexity
 
 #### General consistency algorithm for non-binary constraints
@@ -518,8 +507,7 @@ def general_consistency(Q,G): # Q queue of variables
             for Vi in W:
                 if len(Di) == 0:
                     return fail
-            Q.add(W)
-    
+            Q.add(W) 
 ```
 
 ![](https://s3.hedgedoc.org/demo/uploads/3e3a9319-182a-4f7f-9a76-4aa8e572f59d.png)
@@ -542,8 +530,8 @@ def general_consistency(Q,G): # Q queue of variables
 - inference rule:
     - $V$ is set of all variables
     - $U=\{X_1,...,X_k\}, dom(U)={D_1\cup...\cup D_k}$
-    - $card(U) = card(dom(U)) \implies \forall v \in dom(U), \forall X in (V-U): X \neq v$ (values in $dom(U)$ are unavailable for other variables)
-- complexity of finding all subsets of the set n of variables (naive) $O(2^n)$
+    - $card(U) = card(dom(U)) \implies \forall v \in dom(U), \forall X \in (V-U): X \neq v$ (values in $dom(U)$ are unavailable for other variables)
+- complexity of finding all subsets of the set $n$ of variables (naive) $O(2^n)$
 - effective propagation for allDifferent can be based on matching in bipartite graphs 
 
 ### CSP as bipartite graph
@@ -573,8 +561,7 @@ def DAC_binaryCSP(G,(x1,...xn)):
     for i in range(n,0,-1):
         for j in range(i):
             if (i,j) in G.edges:
-                revise(j,i)
-    
+                revise(j,i) 
 ```
 - repeating revisions is not necessary, domains of revised variables unchanged in subsequent cycles
 - complexity $O(ek^2)$ - each arc is revised once with complexity $O(k^2)$
@@ -641,7 +628,7 @@ Proof:
     - constraint graph $T$ is a tree, so it exists
 - assume $x_1, ..., x_i$ are consistently instantiated
 - we want to instantiate $x_{i+1}$
-    - $d$ is ordering of width 1, so there is only one parent $x_j$ $(j\leq i)$ of $x_{i+1}$
+    - $d$ is ordering of width 1, so there is only one parent $x_j$ $(j\leq i+1)$ of $x_{i+1}$
     - $(x_j,x_{i+1})$ is arc consistent (from DAC), so there is a value in the domain of $x_{i+1}$ consistent with the current assignment of $x_j$, we assign this value
 
 ```python
@@ -686,9 +673,7 @@ Proof:
     - at the moment of node processing the final node width is determined
     - we know what level of directional $i$-consistency we need to achieve 
 
-:::info
 The class of CSPs whose graph width is bounded by the constant $b$ is solvable in polynomial time and space.
-:::
 
 # Interval variables
 
@@ -699,7 +684,7 @@ The class of CSPs whose graph width is bounded by the constant $b$ is solvable i
     - `endBeforeStart(i, j);`, `endAtStart(i, j);`, ...
 - unary constraints for the presence of interval
     - `presenceOf(x)` 
-- expresiions with interval variables
+- expresions with interval variables
     - `startOf(x)`
 	- `endOf(x)`
 	- `sizeOf(x, V)`
@@ -989,7 +974,7 @@ def select_value(i,X,D,C):
 - not possible to assign $x_i$? - go back to culprit variable
 - computation of culprit variable 
     - for each value we are trying to assign ($v_i \in D_i$), we find variable with with the smallest index that is in conflict with that assignment
-        - the culprit variable is the the one that has largest index
+        - the culprit variable is the one that has largest index
 
 ```python
 def GBJ(X,D_all,C): # D_all original domains, D domains in progress
@@ -1019,7 +1004,7 @@ def select_value_GBJ(i,X,D,C,latest_i):
             if k > latest_i:
                 latest_i = k
             if not consistent(X[i]=a):
-                consistent = false
+                consistent = False
             else:
                 k += 1
         if consistent:
@@ -1403,6 +1388,7 @@ def ifs():
 # Comparison of search algorithms
 
 ![](https://s3.hedgedoc.org/demo/uploads/652bb8b2-12b4-402a-9a06-11860bcbd5b8.png)
+
 *all nodes in $B$ are also in $A$ for $A\rightarrow B$*
 
 - benchmarking
@@ -1416,11 +1402,9 @@ def ifs():
 
 # Optimization and soft constraints
 
-:::success
-**Constraint optimization problem**
 
-CSP with objective function from solutions to $\mathbb{R}$.
-:::
+**Constraint optimization problem** is CSP with objective function from solutions to $\mathbb{R}$.
+
 
 
 ## COP in operational research
@@ -1433,7 +1417,7 @@ CSP with objective function from solutions to $\mathbb{R}$.
         - $F_j$ defined on $Q_j\subseteq X, Q_j = \{x_{j_1},...,x_{j_l}\}$
         - $F_j$ is a function $D_{j_1}\times ...\times D_{j_l} \rightarrow \mathbb{R^+}$
     - objective function $$F(\vec{d})=\sum_{j=1}^l F_j(\vec{d}[Q_j])$$ where $\vec{d}[Q_j]$ is a projection of $\vec{d}$ to $Q_j$
-    - solution: $\vec{d^o}$ satisfying all all constraints of $C_h$ such that $F(\vec{d^o})=max_{\vec{d}}F(\vec{d})$ (min for minimization problem)
+    - solution: $\vec{d^o}$ satisfying all constraints of $C_h$ such that $F(\vec{d^o})=max_{\vec{d}}F(\vec{d})$ (min for minimization problem)
 - problems
     - over-constrained problems: solution of CSP does not exist 
     - problems with uncertainties
@@ -1524,7 +1508,7 @@ CSP with objective function from solutions to $\mathbb{R}$.
         - direct inclusion of the optimization criterion in the evaluation
     - tree
         - branch and bount + its extensions
-- *weighted CSP**  
+- *weighted CSP*  
     - minimizing the sum of constraint weights
     - weight: 0 full satisfaction, $(0,\infty)$ partial satisfaction, $\infty$ failure
     - value of objective function: assignment/solution cost
@@ -1550,7 +1534,7 @@ CSP with objective function from solutions to $\mathbb{R}$.
 - speed up using both upper and lower bounds
     - new bound $TempB = (UB+LB)/2$
         - if solution not found, set $LB$ to $TempB+1$
-- lower nound can be influenced by
+- lower bound can be influenced by
     - good heuristics: good propagation through the objective constraint
 	- good solution found early: using an initial bound may help
 	- costs of past variables
@@ -1561,3 +1545,143 @@ CSP with objective function from solutions to $\mathbb{R}$.
 	    - AC∗
 	- global costs of future variables:
 	    - Russian doll search 
+
+---
+
+## Poznámky z Rozvrhování (část relevantní pro CSP)
+
+### 11 Problém splňování podmínek
+
+#### 11.1. V kontextu omezujících podmínek definujte množinu doménových proměnných a doménu.
+
+- množina doménových proměnných - množina proměnných, kterým chceme přiřadit nějaké hodnoty z předem definovaných množin (domén)
+- doména - jaké všechny možné hodnoty mohou nabývat proměnné, tedy $D = D_1 \cup D_2 \cup ... \cup D_n$ kde $D_i$ je doména proměnné $y_i$
+
+#### 11.2. Definujte pojem omezení v kontextu programování s omezujícími podmínkami. Co musí platit, aby se omezení nazývalo splněné? Uveďte příklad omezení a ukažte, kdy je splněno a kdy není splněno.
+
+- omezení je podmínka určující jakých hodnot mohou proměnné nabývat současně
+    - formálně jde o podmnožinu kartézského součinu $D_1 \times D_2 \times ... \times D_n$
+- př. všechny hodnoty musí být navzájem různé, splněno pro $x_1=1$, $x_2=2$, nesplněno pro $x_1=x_2=2$
+
+#### 11.3. Popište problém splňování podmínek. Jak je definováno jeho řešení? Ukažte příklad problému splňování podmínek, který má právě dvě řešení.
+
+Problém splňování podmínek je dán trojicí $(V,D,C)$ kde $V$ jsou porměnné, $D$ domény a $C$ podmínky. Řešením je přiřazení hodnot všem proměnným t.ž. není porušena žádná podmínka. 
+
+Formálně: řešení $(d_1,...,d_n) \in D_1 \times ... \times D_n$, $\forall c_i \in C$ na $v_{i_1}...v_{i_k}$ platí $(d_{i_1}...d_{i_k}) \in c_i$
+
+Příklad: $A\in\{0,1\}$, $B\in\{0,1\}$, $A \neq B$, řešení $A=1,B=0$ nebo $A=0,B=1$
+
+#### 11.4. Uveďte konkrétní příklad problému splňování podmínek a na něm ukažte pojmy množina doménových proměnných, doména, omezení a řešení problému splňování podmínek. Příklad problému splňování podmínek navrhněte tak, aby měl alespoň pět proměnných a pět omezení.
+
+- proměnné: A,B,C,D,E jsou vrcholy grafu, hrany AB, BC, CA, DE
+- domény: pro každou proměnnou {0,1,2}, celkem doména {0,1,2}
+- omezení: sousedé musí mít různé hodnoty, hodnota A musí být větší než hodnota B, hodnota D musí být větší než hodnota A, hodnota E musí být různá od A
+
+#### 11.5. Co je to filtrace domén? K čemu slouží při řešení problému splňování podmínek? Uveďte příklad filtrace domény.
+
+Během filtrace domén odebíráme z domén jednotlivých proměnných hodnoty, o kterých víme, že jich za daných podmínek nemohou nabývat.
+
+#### 11.6. Co je to hranová konzistence (AC)? Kdy nazýváme problém splňování podmínek (CSP) hranově konzistentní? Ukažte příklad problému, který je hranově konzistentní a příklad problému, který není hranově konzistentní.
+
+Podmínka je hranově konzistentní, pokud pro každou hodnotu každé její proměnné existuje kombinace hodnot pro další proměnné v podmínce t.ž. je podmínka splněna. Každá hodnota je tedy podporována. Během revizní procedury odstraňujeme z domén hodnoty, které nemají podporu. 
+
+Příklad: mějme proměnné A,B,C, podmínka A=B+C
+- konzistentní: A {2,3}, B,C {1,2}
+- nekonzistentní: A {1,2,3}, B,C {1,2} protože hodnota 1 proměnné A nemá podporu
+
+#### 11.7. Jak se v problému splňování podmínek zajišťuje hranová konzistence? Napište algoritmus AC-8 pro zajištění hranové konzistence. Čím se liší od algoritmu AC-3?
+
+- postupně revidujeme podmínky a upravujeme domény (vyhazujeme proměnné, které nemají podporu)
+- procedura AC-8 vytvoří frontu proměnných k revizi (na počátku všechny proměnné)
+    - dokud fronta není prázdná, vybereme nějakou proměnnou
+    - pro každou podmínku, který se proměnné týká, provedeme filtraci
+    - pokud se po filtraci mohla změnit doména i jiné proměnné, tak přidáme do fronty
+    - pokud se nějaká doména vyprázdní, tak fail
+
+#### 11.8. Použijte algoritmus AC-8 pro zajištění hranové konzistence na problém splňování podmínek:
+- $A, B, C \in \{1, 2, 3, 4\}$
+
+||podmínky|
+|---|---|
+|c1 | $A \neq B$ |
+|c2 | $B \neq C$ |
+|c3 | $A + B = 4$|
+|c4 | $B + C = 3$|
+
+V algoritmu použijte uspořádání proměnných A, B, C při zařazování proměnných do fronty a uspořádání omezení c1, c2, c3, c4 při výběru k revizi. Ve svém řešení uveďte vždy stav fronty, všechny provedené revize omezení (i když nedojde ke změně domén) a domény proměnných, jejichž doména se změnila.
+
+- Q: A,B,C
+- vyberu A
+- c1 nic
+- c3 A odeberu 4, B odeberu 4, přidám A do fronty (B už tam je)
+- $C \in \{1, 2, 3, 4\}, A, B \in \{1, 2, 3\}$
+-
+- Q: B,C,A
+- vyberu B
+- c1 nic
+- c2 nic
+- c3 nic
+- c4 B odeberu 3, C odeberu 3,4, přidám B do fronty
+- $B, C \in \{1, 2\}, A \in \{1, 2, 3\}$
+- 
+- Q: C,A,B
+- vyberu C
+- nic
+- $B, C \in \{1, 2\}, A \in \{1, 2, 3\}$
+- 
+- Q: A,B
+- vyberu A
+- c1 nic
+- c2 nic
+- c3 A odeberu 1
+- c4 nic
+- $B, C \in \{1, 2\}, A \in \{2, 3\}$
+- 
+- Q: B
+- vyberu B
+- nic
+- $B, C \in \{1, 2\}, A \in \{2, 3\}$
+- 
+- výsledek: $B, C \in \{1, 2\}, A \in \{2, 3\}$
+
+#### 11.9. Uveďte kostru algoritmus přiřazování (labeling) používaný při řešení problému splňování podmínek. Jaký typ prohledávání se zde používá?
+
+Používá se DFS. Zkusíme přiřadit hodnotu proměnné, uděláme problém konzistentní, v případě neúspěchu zkusíme přiřadit jinak.
+
+#### 11.10. Proč není pro řešení problému splňování podmínek dostačující algoritmus pro hranovou konzistenci a musí být doplněn prohledávacím algoritmem?
+
+Protože některé situace neumíme hranovou konzistencí rozhodnout. Například pro trojúhelník s vrcholy A {0,1}, B {0,1}, C {0,1} a podmínky, že každý vrchol má jiné ohodnocení, než jeho sousedi, je sice problém hranově konzistentní, ale nemá řešení, což najdeme pomocí labelingu.
+
+#### 11.11. Popište techniku pohledu dopředu (MAC) pro prohledávání při řešení problému splňování podmínek.
+
+- inicializace - konzistenční alg., abychom dosáhli úvodní konzistence
+- dokud nejsou všechny proměnné ohodnoceny:
+    - vyber neohodnocenou proměnnou
+    - pro každou možnou hodnotu zkus ohodnotit
+        - pokud konzistence ok: R = rekurze
+        - pokud R not fail, vrať R
+    - vrať fail
+
+#### 11.12. Navrhněte a napište modifikaci techniky pohledu dopředu (MAC) tak, aby používala větvení stavového prostoru typu (Promenna=Hodnota ∨ Promenna =\= Hodnota).
+
+Když ohodnocení selže, tak tuto hodnotu odeberu z domény dané proměnné.
+
+#### 11.13. Použijte algoritmus MAC (technika pohledu dopředu) na problém splňování podmínek:
+• A ∈ {0, 1}, B ∈ {0, 1, 2, 3}, C ∈ {0, 1, 2}
+• A =\= B, A =\= C, A < B, A + B + C = 4
+• při výběru proměnné preferujte tu, která má nejmenší doménu
+• preferujte hodnoty, které jsou více podporovány v součtu přes všechny podmínky, při stejném součtu preferujte menší hodnoty v doméně
+
+- konzistence - odebereme 0 z domény B, protože nemá podporu v poslední podmínce
+- chceme přiřadit hodnotu pro A - pro 0 je 3 + 2 + 3 + 2 = 10 podpor, pro 1 je 2 + 2 + 2 + 3 = 9 podpor, přiřadíme 0
+- konzistence - odebereme 0 z domény C a 1 z domény B
+- chceme přiřadit hodnotu B, podpory mají stejně, přiřadíme 2
+- konzistence - odstraníme 1 z domény C
+- výsledek: A=0, B=2, C=2
+
+#### 11.14. First-fail a succeed-first
+
+- fail-first se využívá k výběru toho, kterou proměnnou ohodnotíme
+    - definuje tvar prohledávacího stromu
+- succeed-first se využívá k výběru hodnoty, kterou ji ohodnotíme
+    - definuje pořadí procházení větví

@@ -1,15 +1,16 @@
 # 6. Strojové učení
 
-> Důkladná znalost základních metod strojového učení (rozhodovací stromy včetně regresních, SVM, naivní Bayes, kNN). Semi-supervised learning a aktivní učení. Ansámblové učení. Základy analýzy anomálií. Pokročilé metody vyhodnocování experimentů (křížová validace, ROC křivky, AUC, M učících algoritmů na N datových sadách, bootstrapping). Teoretické základy strojového učení (relace generalizace ve výrokové a predikátové logice, prostor hypotéz a verzí, bias-variance trade-off) (PV021, PV056)
+> Důkladná znalost základních metod strojového učení ([rozhodovací stromy](#tree-learning) [včetně regresních](#what-is-a-regression-tree), SVM, naivní Bayes, kNN). Semi-supervised learning a aktivní učení. [Ansámblové učení.](#ensemble-learning) [Základy analýzy anomálií.](#outliers) Pokročilé metody vyhodnocování experimentů (křížová validace, ROC křivky, AUC, M učících algoritmů na N datových sadách, bootstrapping). Teoretické základy strojového učení ([relace generalizace ve výrokové a predikátové logice](#inductive-logic-programming-ilp), prostor hypotéz a verzí, [bias-variance trade-off](#bias-variance-tradeoff)) (PV021, PV056)
 
 # PV056 Strojové učení a dobývání znalostí (Popelínský)
 
 - M. Straka (MFF UK): https://ufal.mff.cuni.cz/courses/npfl129/2223-winter
-- some notes from Discord (thanks!): https://docs.google.com/document/d/16RK6mwhNoIh0xQOas09_S3aeuE_eVqgDhOR3JU22jrU/edit
 
 ## Tree Learning
 
 ### Classification tree
+
+![](../obrazky/6_ml/class_tree.png)
 
 - classifiers for instances represented as feature-vectors
     - "explainable"
@@ -63,7 +64,7 @@ def decision_tree(examples,features):
 
 - worst case: each branch tests all features
     - n examples, m features $\to$ tree depth m
-    - at each level examine the remaining m-i features for each example at the level to calculate info gains ($\sum_{i=1}^m = O(nm^2)$)
+    - at each level examine the remaining $m-i$ features for each example at the level to calculate info gains ($\sum_{i=1}^m = O(nm^2)$)
 - in practice
     - learned tree is rarely complete
     - complexity linear in both m and n
@@ -116,6 +117,10 @@ def decision_tree(examples,features):
 
 ## Bias-variance tradeoff
 
+- <https://www.cs.cornell.edu/courses/cs4780/2018fa/lectures/lecturenote12.html>
+
+![](../obrazky/6_ml/bias_variance.jpg)
+
 ### Idea. Formalization
 
 - generalization error = bias^2 + variance + irreducible error
@@ -132,9 +137,9 @@ def decision_tree(examples,features):
 ### Examples. Bias-variance for a particular learning algorithm (classification/regression)
 
 - kNN - formula to relate bias-variance decomposition to the parameter k
-        - bias - monotonically increasing function of k, 0 for k=1
-        - variance - monotonically decreasing function of k
-- decision trees - depth determines variance, pruned to control variance 
+    - bias - monotonically increasing function of k, 0 for k=1
+    - variance - monotonically decreasing function of k
+- decision trees - depth determines variance, prune to control variance 
 
 ## Ensemble learning
 
@@ -372,71 +377,6 @@ eastbound(west1).
 :- determination(eastbound/1,has_car/2).
 ```
 
----
-
-## Vnitro
-
----
-
-## Association rule mining
-
-- https://www.upgrad.com/blog/association-rule-mining-an-overview-and-its-applications/
-- association rules = simple If/Then statements
-    - A ⇒ B[support, confidence]
-    - A antecedent
-    - B consequent
-- suitable for non-numeric, categorical data
-- observe frequently occurring patterns, correlations, or associations
-- example: **If** a customer buys bread, **then** he’s 70% likely of buying milk.
-    - antecedent: milk, consequent: bread
-
-### Association mining: Frequent pattern (large itemset), Support, confidence, association rule.
-
-- support
-    - how frequently the if/then relationship appears in the 
-    - % of transactions that contain both antecedent and consequent
-- confidence
-    - the number of times these relationships have been found to be true
-    - % of transactions in D from those containing antecedent that contain also consequent
-- frequent pattern
-    - large itemset such that support ≥ minsup (predefined threshold)
-- applications 
-    - Market Basket Analysis: The database consists of records on past transactions - a single record lists all the items bought by a customer in one sale. Knowing which groups are inclined towards which set of items allows shops to adjust the store layout and the store catalog.
-    - Medical Diagnosis: Using relational association rule mining, we can identify the probability of the occurrence of illness concerning various factors and symptoms.
-
-
-### Association mining: Apriori algorithm
-
-- task: find rules such as support >= minsup && confidence >= minconf
-- https://is.muni.cz/th/aawbh/dp.pdf
-
-```python
-Algorithm:
-[input: data D, support threshold minsup, confidence threshold minconf]
-[output: all frequent itemsets F1,...,Fk]
-generate frequent 1-itemsets F1 (support >= minsup, only counting items)
-k := 1
-while Fk not empty: # finding frequent itemsets
-    generate Ck+1 candidates from Fk - merge elements from Fk which differ only in one item  
-    remove Ck+1 element if it contains is any subset that is not in Fk
-    count support for Ck+1
-    Fk+1 := Ck+1 elements with support >= minsup
-    k := k+1
-if ABCD, AB frequent and support(ABCD)/support(AB) >= minconf
-    AB $\to$ CD[support(ABCD), support(ABCD)/support(AB)]
-```
-
-### Class-association rules
-
-- only a single item in the consequent, a value of the target attribute
-- can be used for classification
-- majority voting or any other (more sophisticated) way can be used
-
-### Association rules for pre-processing and for learning.
-
-- pre-processing for feature construction, a frequent pattern = new feature
-- for classification: class association rules
-
 ## Imbalanced data
 
 - https://www.jeremyjordan.me/imbalanced-data/
@@ -450,6 +390,8 @@ if ABCD, AB frequent and support(ABCD)/support(AB) >= minconf
 
 ### Performance measures for imbalanced data.
 
+![](../obrazky/6_ml/prec_rec.png)
+
 - standard performance metrics (e.g. accuracy, error rate) assume that all instances are equally relevant for the model performance
 - F-measure
     - $F_{\beta}=\frac{(\beta^2+1)\cdot Prec\cdot Rec}{\beta^2\cdot Prec+Rec}$
@@ -459,6 +401,8 @@ if ABCD, AB frequent and support(ABCD)/support(AB) >= minconf
 - Gmean
     - $Gm = \sqrt{sensitivity \times specificity}$
     - $sensitivity = \frac{TP}{TP+FN}$, $specificity = \frac{TN}{TN+FP}$
+
+![](../obrazky/6_ml/auc_roc.png)
 
 ### Pre-processing imbalanced data. Undersampling, oversampling.
 
@@ -481,6 +425,11 @@ if ABCD, AB frequent and support(ABCD)/support(AB) >= minconf
         - won't achieve a balance among the classes - but still useful for cleaning
     - edited nearest neighbors 
         - run the nearest-neighbors algorithm and “edit” the dataset by removing samples that do not agree “enough” with their neighborhood
+
+![](../obrazky/6_ml/tomeks.png)
+
+![](../obrazky/6_ml/wilson-editing.jpg)
+
 - oversampling
     - random
         - randomly sample the minority classes and simply duplicate the sampled observations
@@ -490,6 +439,10 @@ if ABCD, AB frequent and support(ABCD)/support(AB) >= minconf
     - Adaptive Synthetic (ADASYN) sampling
         - the number of samples generated for a given x is proportional to the number of nearby samples which do not belong to the same class as x
 - it is possible to combine oversampling and undersampling
+
+![](../obrazky/6_ml/smote.png)
+
+![](../obrazky/6_ml/adasyn.jpg)
 
 
 ### Modification of classifiers to be able to handle imbalanced data. Cost-sensitive learning.
@@ -531,13 +484,15 @@ if ABCD, AB frequent and support(ABCD)/support(AB) >= minconf
 ### Outlier detection method types
 
 - Supervised 
-    - building a predictive model for normal vs. anomaly classes (problem is transformed to classification problem) e.g.: any supervised learning algorithm (decision tree)
+    - building a predictive model for normal vs. anomaly classes (problem is transformed to classification problem) 
+        - e.g.: any supervised learning algorithm (decision tree)
     - problems:
         - far fewer anomalous instances than normal instances
         - it is challenging to obtain accurate labels for the anomaly class
 
 - Semi-supervised 
-    - training data has labeled instances only for the normal class e.g.: one-class learning: one-class SVM, clustering: EM algorithm (Normal data instances are close to their closest cluster centroid. Anomalies are far from their closest cluster centroid.)
+    - training data has labeled instances only for the normal class 
+        - e.g.: one-class learning: one-class SVM, clustering: EM algorithm (Normal data instances are close to their closest cluster centroid. Anomalies are far from their closest cluster centroid.)
 
 - Unsupervised 
     - no labels, most widely used 
@@ -547,12 +502,14 @@ if ABCD, AB frequent and support(ABCD)/support(AB) >= minconf
 ### LOF (Local Outlier Factor)
 
 - LOF >> 1 $\to$ outlier
-- $dist_k(o)$ - distance from o to its k-th nearest neighbor
+- $dist_k(o)$ - distance from $o$ to its $k$-th nearest neighbor
 - $reachdist_k(o,p) = max(dist_k(p), d(o,p))$
 - local reachability distance - $lrd$
-    - an inverse of the average reachability-distance of k-neighborhood
+    - an inverse of the average reachability-distance of $k$-neighborhood
     - $lrd(o) = 1/(\sum_{p \in kNN(o)} reachdist_k(o,p)/k)$
 - $LOF(o)=(\frac{1}{k}\sum_{p\in kNN(o)}lrd(p))/lrd(o)$ 
+
+![](../obrazky/6_ml/lof.png)
 
 ## Class-based outliers
 
@@ -794,14 +751,13 @@ if ABCD, AB frequent and support(ABCD)/support(AB) >= minconf
 ## Sequence mining
 
 **Definitions**
-- let $L=\{i_1,i_2,...,i_n\}$ be a set of items, itemset is a subset of L
+- let $I=\{i_1,i_2,...,i_n\}$ be a set of items, itemset is a subset of $I$
 - sequence is defined as an ordered list of itemsets
     - $s=s_1s_2...s_l$ where each $s_i$ is an itemset
     - $s_i$ is also called an element or a transaction
         - denoted $(x_1x_2...x_m)$ where each $x_j$ is an item 
-        - denoted $x_1$ is single-element transaction
         - string = sequence with transaction length 1
-- $a=a_1a2...an$ is a subsequence of sequence $b=b_1b_2...bm$ if there exist integers $1\leq j_1<j_2<...<j_n<m$ such that $a_i \subseteq b_{j_i}$
+- $a=a_1a_2...a_n$ is a subsequence of sequence $b=b_1b_2...b_m$ if there exist integers $1\leq j_1<j_2<...<j_n<m$ such that $\forall i: a_i \subseteq b_{j_i}$
     - denoted $a\sqsubseteq b$, $b$ called super-sequence of $a$
 - sequence database $S$ is set of tuples $(id,s)$ where $s$ is a sequence
 - support of sequece $a$ in database $S$ is defined as $support_S(a)=|\{(id,s)|(id,s)\in S \land a \sqsubseteq s\}|$
@@ -864,8 +820,6 @@ if ABCD, AB frequent and support(ABCD)/support(AB) >= minconf
         - succincity
             - we can enumerate all and only those sequences that are guaranteed to satisfy the constraint, even before support counting begins
             - example: there are elements x,y in S
-
-### Mining partial orders (only for an oral exam)
 
 ## Time series
 
@@ -964,6 +918,8 @@ A time series is said to be stationary if there is no systematic change in mean 
     - first index to the first index, last to last (but possible to map more indices ant one)
     - all indices in both sequences must be matched
     - the mapping of the indices from the first sequence to indices from the other sequence must be monotonically increasing 
+
+![](../obrazky/6_ml/dtw_vs_euc.svg)
 
 **DTWDistance algorithm**
 ```python 
